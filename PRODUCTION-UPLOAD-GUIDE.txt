@@ -1,0 +1,18 @@
+HMOS PRODUCTION CLEAN BUILD
+===========================
+
+This ZIP contains the latest HMOS V5.1.0 application files for direct static hosting.
+
+IMPORTANT
+1. Upload every file in this ZIP to the ROOT of the GitHub repository.
+2. Keep index.html in the repository root.
+3. Do NOT upload any Firebase service-account JSON key.
+4. The .nojekyll file is included to prevent GitHub Pages/Jekyll processing.
+5. Firebase Firestore/Auth configuration remains unchanged.
+
+Recommended recovery when the existing GitHub Pages Actions queue is stuck:
+- Create a NEW empty public repository, for example HMOS-LIVE.
+- Upload all files from this ZIP to the root of the new repository.
+- Settings > Pages > Deploy from a branch > main > /(root) > Save.
+
+Existing repository data in Firebase is not affected because Firestore is separate from hosting.

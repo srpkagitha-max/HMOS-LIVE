@@ -1,0 +1,340 @@
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#10213d;background:#edf4fb;font-synthesis:none;--navy:#0a376b;--navy2:#0c4a87;--ink:#10213d;--muted:#65748a;--line:#d9e4ef;--white:#fff;--success:#157347;--warning:#a55d00;--danger:#b42318;--shadow:0 24px 60px rgba(10,55,107,.16)}*{box-sizing:border-box}body{margin:0;min-width:320px;min-height:100vh;background:radial-gradient(circle at 85% 10%,rgba(84,162,230,.2),transparent 30%),linear-gradient(155deg,#f7fbff,#e8f1fa)}button,input{font:inherit}.shell{min-height:100vh;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(360px,.75fr);align-items:center;gap:clamp(32px,7vw,100px);max-width:1180px;margin:auto;padding:48px}.hero{padding:30px 0}.brand{display:flex;gap:24px;align-items:center}.brand-mark{width:104px;height:104px;border-radius:28px;background:linear-gradient(145deg,#fff,#dcecff);box-shadow:0 18px 40px rgba(10,55,107,.2);position:relative;border:1px solid rgba(255,255,255,.8);flex:none}.roof{position:absolute;left:26px;top:27px;width:52px;height:38px;border:8px solid var(--navy);border-bottom:0;border-radius:6px 6px 0 0}.door{position:absolute;width:18px;height:30px;left:43px;top:58px;background:var(--navy);border-radius:5px 5px 2px 2px}.shield{position:absolute;right:-10px;bottom:-9px;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#18a66a;color:#fff;font-weight:900;border:5px solid #edf4fb}.eyebrow{font-weight:800;letter-spacing:.22em;color:var(--navy2);margin:0 0 8px}.brand h1{font-size:clamp(38px,5vw,64px);line-height:1.03;letter-spacing:-.045em;margin:0;color:var(--ink)}.tagline{font-size:18px;color:var(--muted);max-width:540px;line-height:1.6;margin:20px 0 0}.trust-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:36px}.trust-row span{padding:9px 13px;background:rgba(255,255,255,.64);border:1px solid rgba(169,194,217,.7);border-radius:999px;color:#39536f;font-size:13px;font-weight:700}.card{background:rgba(255,255,255,.94);border:1px solid rgba(255,255,255,.85);border-radius:30px;box-shadow:var(--shadow);padding:clamp(26px,4vw,42px);backdrop-filter:blur(18px)}.card-heading{margin-bottom:25px}.step{display:inline-block;color:var(--navy2);font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.13em;margin-bottom:9px}.card h2{font-size:32px;letter-spacing:-.035em;margin:0 0 9px}.card-heading p,.dashboard-head p{margin:0;color:var(--muted);line-height:1.5}.field{display:block;margin-bottom:18px}.field span{display:block;font-weight:750;font-size:14px;margin:0 0 8px}.field input{width:100%;min-height:55px;padding:0 16px;border:1.5px solid var(--line);background:#f8fbfe;border-radius:15px;color:var(--ink);outline:none;transition:.18s}.field input:focus{border-color:#3886c8;box-shadow:0 0 0 4px rgba(56,134,200,.12);background:#fff}.check{display:flex;align-items:center;gap:9px;font-size:14px;color:#4f6074;margin:-2px 0 20px}.check input{width:17px;height:17px}.primary,.secondary{border:0;border-radius:15px;min-height:55px;font-weight:850;cursor:pointer;transition:.18s}.primary{width:100%;display:flex;align-items:center;justify-content:center;gap:18px;color:#fff;background:linear-gradient(135deg,var(--navy),var(--navy2));box-shadow:0 14px 28px rgba(10,55,107,.2)}.primary:hover{transform:translateY(-1px)}.primary:disabled{opacity:.65;cursor:wait}.text-link,.back{border:0;background:transparent;color:var(--navy2);font-weight:750;cursor:pointer}.text-link{display:block;margin:24px auto 0;font-size:13px}.back{padding:0;margin-bottom:25px}.form-message{display:none;font-size:13px;line-height:1.45;border-radius:12px;padding:11px 12px;margin:0 0 16px}.form-message.show{display:block}.form-message.error{color:var(--danger);background:#fff1f0}.form-message.info{color:#155b8f;background:#edf7ff}.dashboard-card{min-width:420px}.dashboard-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}.secondary{padding:0 18px;color:var(--navy);background:#eaf3fb}.success-step{color:var(--success)}.status-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:30px 0}.status-grid article{border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}.status-grid strong{font-size:13px}.status{font-size:12px;font-weight:850}.success{color:var(--success)}.pending{color:var(--warning)}.notice{background:#edf6ff;border:1px solid #cae3f7;border-radius:18px;padding:20px}.notice p{color:var(--muted);margin:7px 0 0;line-height:1.5}footer{grid-column:1/-1;text-align:center;color:#758397;font-size:12px;padding-top:6px}.mobile-break{display:none}@media(max-width:850px){.shell{display:block;padding:0;max-width:none}.hero{padding:42px 24px 76px;background:linear-gradient(145deg,#082f5e,#0c518f);color:#fff}.brand{align-items:flex-start;gap:16px}.brand-mark{width:72px;height:72px;border-radius:20px}.roof{left:18px;top:19px;width:36px;height:27px;border-width:6px}.door{width:13px;height:22px;left:30px;top:41px}.shield{width:30px;height:30px;right:-8px;bottom:-7px;border-width:4px;border-color:#0b477f}.eyebrow,.brand h1{color:#fff}.brand h1{font-size:31px;letter-spacing:-.035em}.tagline{font-size:14px;color:#d7e8f8;margin-top:12px}.trust-row{margin-top:25px}.trust-row span{color:#eaf5ff;border-color:rgba(255,255,255,.22);background:rgba(255,255,255,.08)}.card{margin:-38px 14px 24px;border-radius:27px;padding:28px 22px}.dashboard-card{min-width:0}.status-grid{grid-template-columns:1fr}.mobile-break{display:block}footer{padding:10px 20px 28px}.shell-compact .hero{padding-bottom:70px}}@media(max-width:390px){.brand h1{font-size:27px}.brand-mark{width:64px;height:64px}.card h2{font-size:28px}.trust-row span:last-child{display:none}}
+.wide-card{width:min(760px,100%)}.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:28px 0}.metric-grid article{border:1px solid var(--line);background:#f9fcff;border-radius:18px;padding:18px}.metric-grid span,.metric-grid small{display:block;color:var(--muted)}.metric-grid span{font-size:12px;font-weight:750}.metric-grid strong{display:block;font-size:29px;margin:7px 0 3px}.metric-grid small{font-size:11px}.health-text{color:var(--success);font-size:21px!important}.section-title{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:28px 0 16px}.section-title h3{margin:0 0 5px;font-size:20px}.section-title p{margin:0;color:var(--muted);font-size:13px}.compact-primary{width:auto;min-height:44px;padding:0 17px;box-shadow:none}.empty-state{border:1px dashed #b9cde0;border-radius:18px;text-align:center;padding:34px 20px;background:#f9fcff}.empty-state p{color:var(--muted);margin:8px 0 0}.institute-list{display:grid;gap:10px}.institute-row{display:grid;grid-template-columns:44px 1fr auto auto;align-items:center;gap:13px;border:1px solid var(--line);border-radius:16px;padding:13px;background:#fff}.avatar{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;background:#e9f3fc;color:var(--navy);font-weight:900}.institute-main{display:flex;flex-direction:column;gap:4px}.institute-main span,.limit-text{font-size:12px;color:var(--muted)}.pill{font-size:11px;font-weight:850;text-transform:capitalize;padding:6px 9px;border-radius:999px}.active-pill{color:var(--success);background:#e9f7ef}.setup-note{margin-top:20px;border:1px solid #f0d49f;background:#fff8e9;border-radius:16px;padding:17px}.setup-note p{color:#75531e;margin:6px 0 0;font-size:13px;line-height:1.5}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}.form-wide{grid-column:1/-1}.field select{width:100%;min-height:55px;padding:0 16px;border:1.5px solid var(--line);background:#f8fbfe;border-radius:15px;color:var(--ink);outline:none}.danger-step{color:var(--danger)}.blocked-copy{color:var(--muted);line-height:1.6;margin:0 0 24px}.loading-card{text-align:center}.loader{width:42px;height:42px;border:4px solid #dbe9f5;border-top-color:var(--navy2);border-radius:50%;margin:0 auto 20px;animation:spin .8s linear infinite}.success-message{color:var(--success)!important;background:#eaf8f0!important}@keyframes spin{to{transform:rotate(360deg)}}@media(max-width:850px){.wide-card{width:auto}.metric-grid{grid-template-columns:1fr 1fr}.metric-grid article:last-child{grid-column:1/-1}.section-title{align-items:flex-start;flex-direction:column}.compact-primary{width:100%}.institute-row{grid-template-columns:40px 1fr auto}.limit-text{grid-column:2/-1}.form-grid{grid-template-columns:1fr}}
+.input-action{display:grid;grid-template-columns:1fr auto;gap:8px}.input-action input{min-width:0}.mini-button{border:1px solid var(--line);border-radius:14px;padding:0 13px;background:#eaf3fb;color:var(--navy);font-weight:800;cursor:pointer}.credentials-card{display:grid;grid-template-columns:1fr 1fr auto;align-items:center;gap:16px;margin:14px 0 18px;padding:16px;border:1px solid #bfe3cf;background:#effaf4;border-radius:17px}.credentials-card strong,.credentials-card code,.credentials-card small,.credential-value span{display:block}.credentials-card strong{font-size:20px}.credentials-card small,.credential-value span{font-size:11px;color:var(--muted);margin-top:4px}.credentials-card code{font-size:17px;font-weight:850;color:var(--navy);margin-top:4px;word-break:break-all}@media(max-width:850px){.credentials-card{grid-template-columns:1fr}.credentials-card .secondary{width:100%;min-height:46px}.input-action{grid-template-columns:1fr}.mini-button{min-height:44px}}
+/* HMOS v2.4 Institute Management Pro */
+.metric-grid.four{grid-template-columns:repeat(4,1fr)}
+.toolbar{display:grid;grid-template-columns:1fr 170px;gap:10px;margin:14px 0 16px}.toolbar input,.toolbar select,.field textarea{width:100%;min-height:52px;padding:0 15px;border:1.5px solid var(--line);background:#f8fbfe;border-radius:14px;color:var(--ink);outline:none}.field textarea{min-height:100px;padding:14px;resize:vertical}.toolbar input:focus,.toolbar select:focus,.field textarea:focus{border-color:#3886c8;box-shadow:0 0 0 4px rgba(56,134,200,.12);background:#fff}
+.pro-row{grid-template-columns:44px minmax(0,1fr) auto 76px auto}.institute-main small{font-size:11px;color:#7b899a}.row-meta{text-align:center}.row-meta strong,.row-meta small{display:block}.row-meta small{font-size:10px;color:var(--muted)}.row-menu{border:0;border-radius:11px;background:#eaf3fb;color:var(--navy);font-weight:800;padding:10px 12px;cursor:pointer}
+.inactive-pill{color:#825b00;background:#fff4d8}.expired-pill{color:#a33b2e;background:#fff0ed}.archived-pill{color:#596576;background:#edf0f4}
+.credential-actions{display:flex;gap:8px}.credential-actions .secondary{min-height:42px;padding:0 12px}
+.manage-head{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;margin:24px 0}.avatar.large{width:58px;height:58px;font-size:22px}.manage-head h2{margin:0 0 5px}.manage-head p{margin:0;color:var(--muted);font-size:12px;word-break:break-all}
+.detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.detail-grid article{border:1px solid var(--line);border-radius:16px;padding:16px;background:#f9fcff}.detail-grid span,.detail-grid small{display:block;color:var(--muted);font-size:11px}.detail-grid strong{display:block;margin:7px 0 4px}.detail-grid small{line-height:1.45}
+.action-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}.action-button{min-height:50px;border:1px solid var(--line);background:#f5f9fd;color:var(--navy);border-radius:14px;font-weight:800;cursor:pointer}.danger-action{color:#9e2f25;background:#fff3f1;border-color:#f3cbc6}
+@media(max-width:850px){.metric-grid.four{grid-template-columns:1fr 1fr}.toolbar{grid-template-columns:1fr}.pro-row{grid-template-columns:40px minmax(0,1fr) auto}.pro-row .row-meta{grid-column:2}.pro-row .row-menu{grid-column:3;grid-row:2}.detail-grid{grid-template-columns:1fr}.action-grid{grid-template-columns:1fr 1fr}.manage-head{grid-template-columns:auto 1fr}.manage-head>.pill{grid-column:1/-1;width:max-content}.credential-actions{width:100%}.credential-actions .secondary{flex:1}}
+@media(max-width:430px){.action-grid{grid-template-columns:1fr}.metric-grid.four{grid-template-columns:1fr 1fr}.pro-row{padding:12px 10px;gap:9px}.row-menu{padding:8px 10px}.dashboard-head{gap:8px}.dashboard-head .secondary{padding:0 12px}}
+
+/* HMOS v2.4.2 — clean single-render mobile manage page */
+.manage-page{width:100%;min-width:0}.manage-back{margin:4px 0 16px}.manage-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;margin:0 0 14px;padding:16px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,#f9fcff,#edf6fd)}.manage-title{min-width:0}.manage-title h2{margin:0 0 5px;font-size:30px;line-height:1.06;overflow-wrap:anywhere}.manage-title p{margin:0;color:var(--muted);font-size:12px;overflow-wrap:anywhere}.detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.detail-grid article{min-width:0;padding:15px;border:1px solid var(--line);border-radius:16px;background:#f9fcff;box-shadow:0 7px 18px rgba(10,55,107,.045)}.detail-grid span{display:block;color:var(--muted);font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.08em}.detail-grid strong{display:block;margin:7px 0 4px;font-size:17px;line-height:1.25;overflow-wrap:anywhere}.detail-grid small{display:block;color:var(--muted);font-size:11px;line-height:1.45;overflow-wrap:anywhere}.action-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:14px}.action-button{appearance:none;-webkit-appearance:none;width:100%;min-height:48px;display:flex;align-items:center;justify-content:center;gap:7px;padding:0 10px;border:1px solid var(--line);border-radius:13px;background:#f5f9fd;color:var(--navy);font-size:13px;font-weight:850;line-height:1.15;cursor:pointer}.action-button span{min-width:0;overflow-wrap:anywhere}.action-button:active{transform:scale(.985)}.danger-action{color:#9e2f25;background:#fff3f1;border-color:#f3cbc6}.dashboard-head .secondary{flex:none}
+@media(max-width:850px){.dashboard-card{overflow:hidden}.dashboard-head{position:relative;padding-right:82px;min-height:58px}.dashboard-head .secondary{position:absolute;right:0;top:0;min-height:44px;padding:0 13px;border-radius:14px}.manage-head{grid-template-columns:52px minmax(0,1fr);padding:14px;gap:11px}.avatar.large{width:52px;height:52px;font-size:20px}.manage-head>.pill{grid-column:2;width:max-content}.manage-title h2{font-size:26px}.detail-grid{grid-template-columns:1fr;gap:9px}.detail-grid article{padding:14px}.action-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:430px){.card.dashboard-card{padding-left:18px;padding-right:18px}.dashboard-head{padding-right:74px}.dashboard-head .secondary{font-size:13px;padding:0 11px}.action-button{font-size:12.5px;padding:0 7px}}
+@media(max-width:350px){.action-grid{grid-template-columns:1fr}}
+
+
+/* HMOS v2.5 — safe action dialogs and polished institute controls */
+.modal-open{overflow:hidden}.modal-layer{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:18px;background:rgba(4,25,48,.62);backdrop-filter:blur(7px);animation:modal-fade .16s ease-out}.modal-card{width:min(520px,100%);max-height:min(88vh,760px);overflow:auto;border:1px solid rgba(255,255,255,.55);border-radius:25px;background:#fff;box-shadow:0 28px 80px rgba(2,25,51,.34);animation:modal-rise .2s ease-out}.modal-wide{width:min(720px,100%)}.modal-head{position:sticky;top:0;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:21px 22px 15px;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line);backdrop-filter:blur(10px)}.modal-head h3{margin:5px 0 0;font-size:25px;line-height:1.12}.modal-close{appearance:none;border:0;width:38px;height:38px;border-radius:12px;background:#edf4fa;color:var(--navy);font-size:27px;line-height:1;cursor:pointer}.modal-body{padding:20px 22px 23px}.modal-intro,.confirm-copy,.modal-note{color:var(--muted);line-height:1.55;margin:0 0 18px}.modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:17px}.modal-actions .primary,.modal-actions .secondary{width:100%;min-height:49px}.danger-modal .modal-head{background:#fff8f7}.danger-primary{background:#a63a2f!important;box-shadow:0 10px 24px rgba(166,58,47,.2)!important}.confirm-icon{width:62px;height:62px;display:grid;place-items:center;margin:2px auto 15px;border-radius:19px;background:#edf6fd;font-size:28px}.danger-modal .confirm-icon{background:#fff0ed}.confirm-copy{text-align:center;font-size:15px}.confirm-check{margin:12px 0 4px}.success-panel{padding:15px;border-radius:16px;background:#eaf8f0;border:1px solid #bfe3cf}.success-panel span,.success-panel strong{display:block}.success-panel span{font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:850;letter-spacing:.08em}.success-panel strong{margin-top:5px;font-size:20px}.credential-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:13px 0}.credential-modal-grid article{min-width:0;padding:15px;border:1px solid var(--line);border-radius:15px;background:#f7fbfe}.credential-modal-grid span,.credential-modal-grid code{display:block}.credential-modal-grid span{font-size:10px;color:var(--muted);font-weight:850;text-transform:uppercase;letter-spacing:.07em}.credential-modal-grid code{margin-top:7px;color:var(--navy);font-size:16px;font-weight:850;overflow-wrap:anywhere}.warning-note{padding:12px;border-radius:13px;background:#fff8e9;color:#75531e}.plan-options{display:grid;gap:9px}.plan-options label{display:flex;align-items:center;gap:11px;padding:13px;border:1.5px solid var(--line);border-radius:15px;background:#f8fbfe;cursor:pointer}.plan-options label.selected-plan{border-color:#2d7fbe;background:#edf7ff;box-shadow:0 0 0 3px rgba(45,127,190,.10)}.plan-options input{accent-color:#0b4e89}.plan-options span,.plan-options strong,.plan-options small{display:block}.plan-options span{flex:1}.plan-options small{margin-top:3px;color:var(--muted)}.modal-card .form-grid{grid-template-columns:1fr 1fr}.modal-card .form-message:empty{display:none}@keyframes modal-fade{from{opacity:0}to{opacity:1}}@keyframes modal-rise{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}@media(max-width:650px){.modal-layer{place-items:end center;padding:0}.modal-card,.modal-wide{width:100%;max-height:92vh;border-radius:25px 25px 0 0}.modal-head{padding:18px 18px 13px}.modal-body{padding:17px 18px 22px}.modal-card .form-grid{grid-template-columns:1fr}.credential-modal-grid{grid-template-columns:1fr}.modal-actions{grid-template-columns:1fr}.modal-actions .primary{order:-1}}
+
+/* HMOS v2.6 — institute portal foundation */
+.password-rules{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:-4px 0 18px}.password-rules span{padding:8px 10px;border-radius:10px;background:#edf7ff;color:#27658f;font-size:11px;font-weight:750}.portal-card{min-width:0}.portal-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:16px}.portal-logo{width:64px;height:64px;border-radius:19px;display:grid;place-items:center;background:linear-gradient(145deg,#eaf5ff,#d7eaf9);color:var(--navy);font-size:25px;font-weight:900}.portal-head h2{margin:0 0 6px}.portal-head p{margin:0;color:var(--muted);font-size:13px;overflow-wrap:anywhere}.portal-status{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:22px 0 14px;padding:13px 15px;border:1px solid var(--line);border-radius:15px;background:#f8fbfe;color:var(--muted);font-size:12px}.portal-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.portal-action{appearance:none;min-height:145px;padding:19px 14px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,#fff,#f2f8fd);color:var(--ink);text-align:left;cursor:pointer;box-shadow:0 8px 20px rgba(10,55,107,.06);transition:.18s}.portal-action:hover{transform:translateY(-2px);border-color:#abcbe5}.portal-action>span{display:grid;place-items:center;width:39px;height:39px;margin-bottom:16px;border-radius:12px;background:#e7f2fb;color:var(--navy);font-size:20px;font-weight:900}.portal-action strong,.portal-action small{display:block}.portal-action strong{font-size:16px}.portal-action small{margin-top:6px;color:var(--muted);font-size:11px;line-height:1.4}.portal-contact{margin-top:15px;padding:15px;border-radius:15px;background:#edf6ff;border:1px solid #cfe5f7}.portal-contact p{margin:5px 0 0;color:var(--muted);font-size:12px;overflow-wrap:anywhere}@media(max-width:650px){.password-rules{grid-template-columns:1fr}.portal-head{grid-template-columns:52px minmax(0,1fr)}.portal-logo{width:52px;height:52px;border-radius:15px;font-size:21px}.portal-head .secondary{grid-column:1/-1;width:100%;min-height:44px}.portal-status{align-items:flex-start;flex-direction:column}.portal-actions{grid-template-columns:1fr}.portal-action{min-height:106px;display:grid;grid-template-columns:45px 1fr;grid-template-rows:auto auto;column-gap:12px;align-items:center}.portal-action>span{grid-row:1/3;margin:0}.portal-action small{margin-top:2px}}
+
+
+/* HMOS v2.6.1 — Chrome PWA install control */
+.pwa-install-button{position:fixed;z-index:950;right:max(14px,env(safe-area-inset-right));bottom:max(16px,calc(env(safe-area-inset-bottom) + 12px));min-height:48px;padding:0 18px;border:1px solid rgba(255,255,255,.55);border-radius:999px;background:linear-gradient(135deg,#0a376b,#0c5b9d);color:#fff;font-weight:850;box-shadow:0 14px 34px rgba(4,37,72,.28);cursor:pointer}.pwa-install-button[hidden]{display:none!important}@media(max-width:650px){.pwa-install-button{left:50%;right:auto;transform:translateX(-50%);bottom:max(14px,calc(env(safe-area-inset-bottom) + 10px));white-space:nowrap}}
+
+
+/* HMOS v2.7.1 — completed institute login UX */
+.password-input-wrap{position:relative}.password-input-wrap input{width:100%;padding-right:78px}.password-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);min-width:56px;height:38px;border:0;border-radius:11px;background:#e7f2fb;color:#0b4e89;font-weight:850;cursor:pointer}.compact-link{margin:0;padding:0;border:0;background:transparent;font-size:12px}.portal-status .compact-link{margin-left:auto}@media(max-width:650px){.portal-status .compact-link{margin-left:0}}
+
+
+/* V2.8.0 New Admission */
+.admission-card,.admission-success-card{max-width:760px}.admission-card textarea{min-height:110px;resize:vertical}.success-check{width:86px;height:86px;border-radius:50%;display:grid;place-items:center;margin:0 auto 18px;background:#e5f7ed;color:#138552;font-size:46px;font-weight:900}.admission-success-card{text-align:center}.receipt-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:26px 0;text-align:left}.receipt-grid article{border:1px solid #d8e3ed;background:#f7fafc;border-radius:18px;padding:18px}.receipt-grid span{display:block;color:#6c7a8b;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}.receipt-grid strong{display:block;margin-top:7px;font-size:18px;overflow-wrap:anywhere}.receipt-grid small{display:block;margin-top:5px;color:#6c7a8b}.admission-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+@media(max-width:620px){.receipt-grid,.admission-actions{grid-template-columns:1fr}.admission-card .form-grid{grid-template-columns:1fr}}
+@media print{body{background:#fff}.hero,footer,.pwa-install-button,.admission-actions,#success-portal{display:none!important}.shell,.card{padding:0!important;margin:0!important;box-shadow:none!important;border:0!important}.admission-success-card{max-width:none!important}.receipt-grid{grid-template-columns:1fr 1fr!important}}
+
+/* V2.8.1 Admission completion */
+.student-login-card{margin:20px 0;padding:18px;border:1px solid #bfe3cf;border-radius:18px;background:#eefaf3;text-align:left}.student-login-card p{margin:12px 0;color:var(--muted);font-size:13px;line-height:1.5}.student-login-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.student-login-grid article{padding:14px;border:1px solid #cfe5d8;border-radius:14px;background:#fff}.student-login-grid span,.student-login-grid code{display:block}.student-login-grid span{font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase}.student-login-grid code{margin-top:6px;color:var(--navy);font-size:16px;font-weight:900;overflow-wrap:anywhere}.student-login-card .secondary{width:100%}@media(max-width:620px){.student-login-grid{grid-template-columns:1fr}}
+@media print{.student-login-card button{display:none!important}}
+
+
+/* V2.9.0 Student Portal */
+.student-summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:22px}.student-summary-grid article{padding:18px;border:1px solid var(--line);border-radius:18px;background:#f7fbfe}.student-summary-grid span,.student-summary-grid strong,.student-summary-grid small{display:block}.student-summary-grid span{font-size:11px;color:var(--muted);font-weight:850;text-transform:uppercase;letter-spacing:.07em}.student-summary-grid strong{margin-top:7px;font-size:18px;color:var(--ink)}.student-summary-grid small{margin-top:5px;color:var(--muted)}@media(max-width:620px){.student-summary-grid{grid-template-columns:1fr}}
+
+
+/* V3.0 Student Management */
+.admin-search{width:100%;padding:18px 20px;border:2px solid #d9e4ef;border-radius:18px;font:inherit;margin:12px 0 18px;background:#f8fbfe;color:#102a4a}
+.student-admin-list{display:grid;gap:14px}.student-admin-row{display:grid;grid-template-columns:auto 1fr auto auto;gap:14px;align-items:center;padding:16px;border:1px solid #dce7f0;border-radius:20px;background:#fff}.student-admin-main{display:grid;gap:4px;min-width:0}.student-admin-main strong{font-size:18px;color:#102a4a}.student-admin-main span,.student-admin-main small{color:#6a7889;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.student-danger-zone{margin-top:22px;padding:20px;border:1px solid #f2caca;background:#fff7f7;border-radius:20px}.student-danger-zone p{color:#6a7889}.loading-card{text-align:center;padding:32px}.inactive-pill{background:#fff0e9;color:#a84920}
+@media(max-width:640px){.student-admin-row{grid-template-columns:auto 1fr auto}.student-admin-row .row-menu{grid-column:2/4;width:100%}.student-admin-row .pill{justify-self:end}}
+
+
+/* V3.1 Room & Bed Management */
+.room-list{display:grid;gap:16px}.room-card{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;padding:20px;border:1px solid #d9e4ed;border-radius:22px;background:#fff}.room-card h3{margin:6px 0;font-size:26px}.room-card p{margin:0;color:#6c7a8c}.room-stats{text-align:center;padding:12px 16px;border-radius:16px;background:#eef7ff}.room-stats strong{display:block;font-size:24px}.room-stats small{color:#6c7a8c}.room-card .row-menu{grid-column:1/-1}.bed-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:14px;margin:20px 0 30px}.bed-card{padding:18px;border-radius:20px;border:1px solid #dbe5ed;display:grid;gap:10px}.bed-card span{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}.bed-card strong{font-size:18px}.vacant-bed{background:#effaf4;border-color:#bfe6ce}.occupied-bed{background:#f3f7fb}.bed-card button{width:100%}@media(max-width:600px){.room-card{grid-template-columns:1fr auto}.room-card h3{font-size:22px}.bed-grid{grid-template-columns:1fr 1fr}}
+
+
+/* V3.1.1 Student Actions */
+.student-action-panel{margin-top:24px;padding:22px;border:1px solid #d8e4ee;border-radius:24px;background:#f8fbfd}.student-action-panel h3{margin:8px 0 4px;font-size:1.35rem}.student-action-panel p{color:#68788b}.student-action-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px}.student-action-grid .action-button{min-height:72px}.student-forgot-note{text-align:center;color:#68788b;font-weight:700;margin:16px 0 0}@media(max-width:480px){.student-action-grid{grid-template-columns:1fr 1fr}.student-action-grid .action-button{font-size:.92rem;padding:12px 8px}}
+
+/* V3.2 Fees Management */
+.fee-student-list{display:grid;gap:14px}.fee-student-card{display:grid;grid-template-columns:1fr auto auto;gap:16px;align-items:center;border:1px solid #dce7f0;border-radius:20px;padding:18px;background:#fff}.fee-student-card>div:first-child{display:grid;gap:5px}.fee-student-card span{color:#6b7788}.fee-amounts{display:grid;grid-template-columns:auto auto;gap:3px 10px;text-align:right}.due-text{color:#b5473c}.fee-summary,.receipt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.fee-summary article,.receipt-grid article{padding:16px;border:1px solid #dce7f0;border-radius:18px;background:#f7fafc;display:grid;gap:5px}.modal-divider{border:0;border-top:1px solid #dce7f0;margin:22px 0}@media(max-width:640px){.fee-student-card{grid-template-columns:1fr}.fee-amounts{text-align:left;grid-template-columns:auto 1fr}.fee-summary,.receipt-grid{grid-template-columns:1fr}}
+
+
+/* V3.2.1 cinema-style bed selector */
+.floor-tabs{display:flex;gap:10px;overflow-x:auto;padding:4px 0 18px;scrollbar-width:none}.floor-tab{white-space:nowrap;border:1px solid #c9d9e8;background:#eef6fd;color:#174b79;border-radius:999px;padding:11px 17px;font-weight:800}.floor-tab.active{background:#0e4f89;color:#fff;border-color:#0e4f89}.cinema-room-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}.cinema-room-card{border:1px solid #d4e0ea;background:#fff;border-radius:20px;padding:18px;text-align:left;color:#132744;box-shadow:0 8px 24px rgba(29,75,112,.07)}.cinema-room-card .room-number{display:block;font-size:26px;font-weight:900}.cinema-room-card small,.cinema-room-card em{display:block;color:#718096;margin-top:4px}.cinema-room-card em{font-size:12px}.cinema-screen{margin:24px auto 14px;max-width:560px;text-align:center;background:linear-gradient(180deg,#dceaf7,#f8fbfe);border-radius:50% 50% 14px 14px;padding:13px;font-weight:900;letter-spacing:.08em;color:#285a86;box-shadow:0 10px 20px rgba(35,80,120,.12)}.cinema-bed-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(82px,1fr));gap:12px;margin:18px 0}.cinema-bed{min-height:96px;border:2px solid #c8d9e7;border-radius:18px;background:#f7fbfe;color:#17324f;padding:10px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}.cinema-bed span{font-size:10px;letter-spacing:.12em}.cinema-bed strong{font-size:24px}.cinema-bed small{text-transform:capitalize;font-size:11px;max-width:100%;overflow:hidden;text-overflow:ellipsis}.cinema-bed.vacant{border-color:#59b98f;background:#edfbf4}.cinema-bed.occupied{border-color:#9aa9b8;background:#e9eef3}.cinema-bed.hidden{border-style:dashed;border-color:#8993a1;background:#f1f2f4;opacity:.72}.cinema-bed.maintenance{border-color:#e6a64c;background:#fff5e5}.cinema-bed.reserved{border-color:#8e72c9;background:#f3effc}.cinema-bed.selected{outline:4px solid rgba(21,92,158,.22);border-color:#155c9e;background:#e7f2fd;transform:translateY(-2px)}.bed-legend{display:flex;flex-wrap:wrap;gap:10px 16px;justify-content:center;font-size:13px;color:#596a7b}.bed-legend span{display:flex;align-items:center;gap:6px}.bed-legend i{width:12px;height:12px;border-radius:4px;display:inline-block}.vacant-dot{background:#59b98f}.selected-dot{background:#155c9e}.occupied-dot{background:#9aa9b8}.hidden-dot{background:#8993a1}.maintenance-dot{background:#e6a64c}.reserved-dot{background:#8e72c9}.selected-bed-panel{margin:20px 0;padding:18px;border:1px solid #d5e1eb;background:#f7fbfe;border-radius:20px}.bed-admin-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-top:14px}.bed-help{color:#6d7d8c;text-align:center;font-size:13px}
+
+/* V3.3 Admission payment & bed booking */
+.fee-box,.bed-booking-box,.upi-box{padding:20px;border:1px solid #d7e2ec;border-radius:22px;background:#f7fbff}.fee-box h3,.bed-booking-box h3,.upi-box h3{margin:0 0 14px}.admission-room-btn{margin:6px}.credential-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* V3.4.0 Institute Admin Home */
+.admin-home-title{margin:28px 0 18px}.admin-home-title h3{font-size:clamp(28px,7vw,42px);margin:6px 0}.admin-home-title p{margin:0;color:#6d7b8d}
+.admin-home-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.admin-home-action{min-height:150px;border:1px solid #d8e4ee;border-radius:24px;background:#f7fbfe;padding:20px;text-align:left;color:#102642;display:flex;flex-direction:column;gap:8px;justify-content:center;box-shadow:0 10px 24px rgba(12,58,103,.06)}
+.admin-home-action strong{font-size:24px}.admin-home-action small{font-size:15px;line-height:1.35;color:#6c7a8b}.admin-home-icon{font-size:30px}.admin-home-wide{grid-column:1/-1}.compact-dashboard{margin-top:20px}.report-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.report-grid button{min-height:92px}
+@media(max-width:560px){.admin-home-grid{grid-template-columns:1fr 1fr;gap:12px}.admin-home-action{min-height:132px;padding:16px;border-radius:20px}.admin-home-action strong{font-size:20px}.admin-home-action small{font-size:13px}.report-grid{grid-template-columns:1fr}}
+
+
+/* HMOS V3.5 compact mobile UI */
+.compact-page{padding:24px!important}.compact-heading{margin:12px 0 20px}.compact-heading h2{font-size:clamp(28px,8vw,40px);line-height:1.05;margin:6px 0}.compact-heading p{font-size:16px;margin:6px 0}.compact-form{display:grid;grid-template-columns:1fr 1fr;gap:14px}.compact-form .field{margin:0}.compact-section{margin-top:22px}.compact-section h3{font-size:22px;margin:0 0 12px}.mini-stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.mini-stat-grid article{padding:16px;border:1px solid #d8e2eb;border-radius:18px;background:#f7fafc}.mini-stat-grid span{font-size:13px;color:#607083;display:block}.mini-stat-grid strong{font-size:28px}.compact-list-row{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:14px;border:1px solid #d8e2eb;border-radius:16px;margin:10px 0;background:#fff}.compact-list-row div{min-width:0}.compact-list-row strong,.compact-list-row span,.compact-list-row small{display:block}.compact-list-row span{font-size:14px;color:#526274}.compact-list-row small{font-size:12px;color:#768494}.compact-button{padding:10px 14px!important;min-height:42px!important;width:auto!important}.compact-select{padding:10px;border-radius:12px;border:1px solid #ccd8e3}.compact-empty{padding:22px!important}.student-home-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}.student-home-card{display:flex;align-items:center;gap:12px;text-align:left;border:1px solid #d7e2ec;background:#f8fbfd;border-radius:18px;padding:16px;min-height:92px;color:#0c2b50}.student-home-card>span{font-size:28px}.student-home-card div{flex:1}.student-home-card strong,.student-home-card small{display:block}.student-home-card strong{font-size:19px}.student-home-card small{font-size:13px;color:#687789;margin-top:4px}.student-home-card b{font-size:28px}.compact-profile-head{display:flex;align-items:center;gap:14px}.compact-profile-head>div:nth-child(2){flex:1}.compact-profile-head h2{font-size:28px;margin:2px 0}.compact-profile-head p{margin:0;color:#657386}.profile-detail-list{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0}.profile-detail-list article,.menu-detail-grid article{padding:14px;border:1px solid #d8e2eb;border-radius:15px;background:#f8fbfd}.profile-detail-list span,.menu-detail-grid span{display:block;font-size:12px;color:#687789}.profile-detail-list strong,.menu-detail-grid strong{font-size:16px;overflow-wrap:anywhere}.meal-card-grid{display:grid;gap:12px}.meal-card{display:flex;align-items:center;gap:12px;border:1px solid #d8e2eb;border-radius:17px;padding:15px}.meal-card>div{flex:1}.meal-card strong,.meal-card small{display:block}.meal-card small{color:#6b7989;margin-top:4px}.menu-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.compact-report-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.compact-report{padding:16px!important;min-height:70px!important;font-size:16px!important}.admin-home-card{min-height:112px!important;padding:17px!important}.admin-home-card strong{font-size:20px!important}.dashboard-card .metric-grid article{padding:18px!important}.dashboard-card .metric-grid strong{font-size:34px!important}
+@media(max-width:620px){.compact-page{padding:20px!important}.compact-form{grid-template-columns:1fr}.mini-stat-grid{grid-template-columns:1fr 1fr}.mini-stat-grid article:last-child{grid-column:1/-1}.student-home-grid{grid-template-columns:1fr 1fr}.profile-detail-list,.menu-detail-grid,.compact-report-grid{grid-template-columns:1fr 1fr}.compact-list-row{align-items:flex-start;flex-direction:column}.compact-list-row button,.compact-list-row select{width:100%}.hero{padding-bottom:120px!important}.shell-compact .hero{min-height:340px!important}.brand h1{font-size:clamp(34px,10vw,50px)!important}.brand .tagline{font-size:16px!important}.dashboard-card,.portal-card{margin-top:-80px!important}.section-title h3{font-size:25px!important}.card-heading h2{font-size:34px!important}}
+
+.admin-home-action{min-height:105px!important;padding:15px!important}.admin-home-action strong{font-size:19px!important}.admin-home-action small{font-size:13px!important;line-height:1.3!important}.admin-home-icon{font-size:26px!important}.admin-home-title h3{font-size:28px!important;margin:4px 0}.admin-home-title p{font-size:15px!important}.admin-home-grid{gap:12px!important}
+
+
+/* V3.5.1 neat institute gateway + compact admin dashboard */
+.gateway-card{padding:22px!important}.gateway-head{margin-bottom:18px}.gateway-actions{display:grid;gap:10px}.gateway-action{display:grid;grid-template-columns:42px minmax(0,1fr) 18px;align-items:center;gap:12px;width:100%;min-height:72px;padding:12px 14px;border:1px solid #d8e3ec;border-radius:16px;background:#f8fbfd;color:#102642;text-align:left}.gateway-action>span{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:#e8f3fb;font-size:21px}.gateway-action strong,.gateway-action small{display:block}.gateway-action strong{font-size:16px;line-height:1.2}.gateway-action small{margin-top:3px;font-size:11px;color:#6b7989}.gateway-action b{font-size:24px;font-weight:500;color:#7a8a9a}.gateway-status{margin:14px 0 0!important;padding:10px 12px!important;flex-direction:row!important;align-items:center!important}.compact-admin-home{padding:20px!important}.compact-admin-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}.compact-admin-top .back{width:auto;margin:0}.compact-admin-top h2{font-size:24px;margin:4px 0 2px}.compact-admin-top p{font-size:12px;margin:0;color:#687789}.neat-admin-grid{grid-template-columns:1fr 1fr!important;gap:10px!important}.neat-admin-grid .admin-home-action{min-height:92px!important;padding:12px!important;border-radius:16px!important;gap:4px!important;box-shadow:none!important}.neat-admin-grid .admin-home-icon{font-size:21px!important}.neat-admin-grid .admin-home-action strong{font-size:16px!important;line-height:1.15!important}.neat-admin-grid .admin-home-action small{font-size:10.5px!important;line-height:1.25!important}.admin-home-wide{grid-column:auto!important}.compact-heading h2{font-size:26px!important}.compact-heading p{font-size:13px!important}.compact-report-grid{grid-template-columns:1fr 1fr!important;gap:9px!important}.compact-report{min-height:54px!important;padding:10px!important;font-size:12px!important;border-radius:14px!important}.admin-home-grid.compact-dashboard .admin-home-action{min-height:88px!important;padding:12px!important;border-radius:16px!important}.admin-home-grid.compact-dashboard .admin-home-action strong{font-size:15px!important}.admin-home-grid.compact-dashboard .admin-home-action small{font-size:10.5px!important}
+@media(max-width:560px){.gateway-card{padding:18px!important}.portal-head.gateway-head{grid-template-columns:48px minmax(0,1fr)!important;gap:10px}.gateway-head .portal-logo{width:48px;height:48px}.gateway-head h2{font-size:25px}.gateway-head .secondary{grid-column:1/-1;min-height:40px}.compact-admin-top{display:block}.compact-admin-top .back{margin-bottom:10px}.neat-admin-grid{grid-template-columns:1fr 1fr!important}.gateway-status{display:grid!important;grid-template-columns:auto 1fr auto!important}.gateway-status .compact-link{margin:0!important}}
+
+/* HMOS V3.5.2 uniform compact interface — mobile first */
+@media (max-width: 700px) {
+  .hero{padding:24px 18px 64px!important;min-height:auto!important}
+  .brand-mark{width:54px!important;height:54px!important;border-radius:15px!important}
+  .brand h1{font-size:25px!important;line-height:1.05!important}
+  .brand .tagline{font-size:12px!important;line-height:1.4!important;margin-top:8px!important}
+  .trust-row{margin-top:16px!important;gap:7px!important}
+  .trust-row span{font-size:10px!important;padding:6px 9px!important}
+  .card,.compact-page,.dashboard-card,.portal-card,.admission-card{margin:-28px 10px 16px!important;padding:16px!important;border-radius:20px!important}
+  .wide-card{width:auto!important}
+  .back{font-size:12px!important;margin-bottom:12px!important}
+  .step{font-size:9px!important;letter-spacing:.11em!important;margin-bottom:5px!important}
+  .card h2,.compact-heading h2,.card-heading h2,.compact-profile-head h2{font-size:22px!important;line-height:1.1!important;margin:3px 0 5px!important}
+  .card-heading,.compact-heading{margin:6px 0 14px!important}
+  .card-heading p,.compact-heading p,.dashboard-head p,.manage-title p{font-size:11px!important;line-height:1.4!important}
+  .section-title{margin:16px 0 10px!important}
+  .section-title h3,.compact-section h3{font-size:17px!important;margin:0 0 3px!important}
+  .section-title p{font-size:10px!important}
+  .metric-grid,.mini-stat-grid{gap:8px!important;margin:14px 0!important;grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .metric-grid article,.mini-stat-grid article,.dashboard-card .metric-grid article{padding:10px!important;border-radius:13px!important;min-height:72px!important}
+  .metric-grid span,.mini-stat-grid span{font-size:9px!important}
+  .metric-grid strong,.mini-stat-grid strong,.dashboard-card .metric-grid strong{font-size:23px!important;margin:4px 0 1px!important}
+  .metric-grid small{font-size:8.5px!important}
+  .primary,.secondary{min-height:40px!important;border-radius:12px!important;font-size:12px!important}
+  .compact-primary{min-height:38px!important;padding:0 12px!important}
+  .field{margin-bottom:10px!important}
+  .field span{font-size:10px!important;margin-bottom:5px!important}
+  .field input,.field select,.field textarea{min-height:42px!important;border-radius:11px!important;padding:8px 11px!important;font-size:12px!important}
+  .field textarea{min-height:76px!important}
+  .form-grid,.compact-form{gap:0 9px!important}
+  .student-home-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;margin-top:12px!important}
+  .student-home-card{min-height:62px!important;padding:9px 10px!important;border-radius:13px!important;gap:6px!important;box-shadow:none!important}
+  .student-home-card div{min-width:0!important}
+  .student-home-card strong{font-size:13px!important;line-height:1.15!important}
+  .student-home-card small{font-size:9px!important;line-height:1.2!important;margin-top:2px!important}
+  .student-home-card b{font-size:18px!important}
+  .compact-profile-head{gap:9px!important;align-items:center!important}
+  .compact-profile-head .portal-logo{width:42px!important;height:42px!important;border-radius:12px!important;font-size:17px!important}
+  .compact-profile-head .compact-button{padding:7px 10px!important;min-height:34px!important;font-size:11px!important}
+  .admin-home-grid,.neat-admin-grid,.admin-home-grid.compact-dashboard{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+  .admin-home-action,.neat-admin-grid .admin-home-action,.admin-home-grid.compact-dashboard .admin-home-action{min-height:64px!important;padding:10px!important;border-radius:13px!important;gap:2px!important;justify-content:center!important;box-shadow:none!important}
+  .admin-home-action strong,.neat-admin-grid .admin-home-action strong,.admin-home-grid.compact-dashboard .admin-home-action strong{font-size:13px!important;line-height:1.15!important}
+  .admin-home-action small,.neat-admin-grid .admin-home-action small,.admin-home-grid.compact-dashboard .admin-home-action small{font-size:9px!important;line-height:1.2!important}
+  .admin-home-icon{display:none!important}
+  .admin-home-wide{grid-column:auto!important}
+  .compact-list-row{padding:10px!important;border-radius:12px!important;margin:7px 0!important;gap:7px!important}
+  .compact-list-row strong{font-size:12px!important}
+  .compact-list-row span{font-size:10px!important}
+  .compact-list-row small{font-size:9px!important}
+  .institute-row,.student-admin-row,.fee-student-card{padding:10px!important;border-radius:13px!important}
+  .avatar{width:36px!important;height:36px!important;border-radius:10px!important;font-size:13px!important}
+  .profile-detail-list,.menu-detail-grid{gap:7px!important;margin:12px 0!important}
+  .profile-detail-list article,.menu-detail-grid article{padding:9px!important;border-radius:11px!important}
+  .profile-detail-list span,.menu-detail-grid span{font-size:9px!important}
+  .profile-detail-list strong,.menu-detail-grid strong{font-size:12px!important}
+  .meal-card{padding:10px!important;border-radius:12px!important}
+  .meal-card strong{font-size:12px!important}.meal-card small{font-size:9px!important}
+  .cinema-screen{font-size:12px!important;padding:9px!important;margin:10px 0!important}
+  .cinema-bed-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:7px!important}
+  .cinema-bed{min-height:74px!important;border-radius:13px!important;padding:7px 3px!important}
+  .cinema-bed span,.cinema-bed small{font-size:8px!important}.cinema-bed strong{font-size:18px!important}
+  .bed-legend{font-size:9px!important;gap:6px 9px!important}
+  .selected-bed-panel{padding:11px!important;border-radius:13px!important;margin:12px 0!important}
+  .bed-admin-actions{gap:6px!important;grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .report-grid,.compact-report-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+  .compact-report,.report-grid button{min-height:48px!important;padding:8px!important;font-size:10px!important;border-radius:12px!important}
+  .empty-state,.compact-empty{padding:18px 10px!important;border-radius:13px!important}
+  .empty-state strong{font-size:13px!important}.empty-state p{font-size:10px!important}
+  footer{font-size:9px!important;padding:6px 10px 18px!important}
+}
+
+/* HMOS V3.5.3 — premium, balanced institute gateway */
+@media (max-width:700px){
+  .shell .hero{
+    padding:20px 18px 42px!important;
+    min-height:0!important;
+  }
+  .shell .brand{gap:13px!important;align-items:center!important}
+  .shell .brand-mark{width:58px!important;height:58px!important;border-radius:17px!important}
+  .shell .brand h1{font-size:27px!important;line-height:1.05!important;letter-spacing:-.035em!important}
+  .shell .brand .tagline{font-size:13px!important;line-height:1.35!important;margin-top:7px!important;max-width:330px!important}
+  .shell .trust-row{margin-top:15px!important;gap:8px!important}
+  .shell .trust-row span{font-size:11px!important;padding:7px 11px!important}
+
+  .gateway-card{
+    margin:-18px 12px 18px!important;
+    padding:22px 18px 20px!important;
+    border-radius:24px!important;
+    box-shadow:0 18px 48px rgba(7,45,86,.18)!important;
+  }
+  .gateway-head{margin-bottom:20px!important}
+  .portal-head.gateway-head{grid-template-columns:54px minmax(0,1fr)!important;gap:12px!important}
+  .gateway-head .portal-logo{width:54px!important;height:54px!important;border-radius:15px!important;font-size:21px!important}
+  .gateway-head .step{font-size:10px!important;letter-spacing:.13em!important}
+  .gateway-head h2{font-size:29px!important;line-height:1.08!important;margin:3px 0 4px!important}
+  .gateway-head p{font-size:12px!important;line-height:1.35!important}
+  .gateway-head .secondary{grid-column:1/-1!important;min-height:44px!important;font-size:13px!important;border-radius:13px!important}
+
+  .gateway-actions{gap:11px!important}
+  .gateway-action{
+    grid-template-columns:minmax(0,1fr) 18px!important;
+    min-height:82px!important;
+    padding:15px 16px!important;
+    border-radius:18px!important;
+    background:linear-gradient(180deg,#fbfdff,#f5f9fd)!important;
+    border:1px solid #d6e2ed!important;
+    box-shadow:0 8px 20px rgba(19,63,103,.06)!important;
+  }
+  .gateway-action>span{display:none!important}
+  .gateway-action strong{font-size:18px!important;line-height:1.15!important}
+  .gateway-action small{font-size:12px!important;line-height:1.3!important;margin-top:5px!important}
+  .gateway-action b{font-size:23px!important;color:#6c8093!important}
+}
+
+@media (max-width:390px){
+  .shell .brand h1{font-size:25px!important}
+  .gateway-card{padding:20px 16px!important}
+  .gateway-action{min-height:78px!important;padding:13px 14px!important}
+  .gateway-action strong{font-size:17px!important}
+  .gateway-action small{font-size:11px!important}
+}
+
+/* HMOS V3.5.4 — premium readable typography, unchanged compact boxes */
+@media (max-width:700px){
+  /* Admission form: retain the same compact field boxes, improve readability */
+  .admission-card .card-heading h2,
+  .admission-card h2{font-size:27px!important;line-height:1.08!important;letter-spacing:-.025em!important}
+  .admission-card .card-heading p{font-size:13px!important;line-height:1.45!important}
+  .admission-card .step{font-size:10px!important;letter-spacing:.13em!important}
+  .admission-card .field>span{font-size:12px!important;font-weight:750!important;margin-bottom:6px!important}
+  .admission-card .field input,
+  .admission-card .field select,
+  .admission-card .field textarea{font-size:14px!important;line-height:1.35!important;font-weight:500!important}
+  .admission-card .primary{font-size:14px!important;font-weight:800!important}
+  .admission-card .back{font-size:13px!important;font-weight:750!important}
+
+  /* Student portal: same card dimensions, larger consistent typography */
+  .student-dashboard .compact-profile-head h2,
+  .student-home-page .compact-profile-head h2{font-size:27px!important;line-height:1.08!important;letter-spacing:-.025em!important}
+  .student-dashboard .compact-profile-head p,
+  .student-home-page .compact-profile-head p{font-size:13px!important;line-height:1.35!important}
+  .student-dashboard .step,
+  .student-home-page .step{font-size:10px!important;letter-spacing:.13em!important}
+  .student-home-card strong{font-size:15px!important;line-height:1.15!important;font-weight:800!important;letter-spacing:-.01em!important}
+  .student-home-card small{font-size:10.5px!important;line-height:1.28!important;color:#667789!important}
+  .student-home-card b{font-size:20px!important}
+  .compact-profile-head .compact-button{font-size:12px!important;font-weight:800!important}
+
+  /* Admin home: preserve two-column grid and box size, enlarge labels uniformly */
+  .admin-home-page .compact-heading h2,
+  .admin-dashboard-home .compact-heading h2,
+  .admin-home-card .compact-heading h2{font-size:27px!important;line-height:1.08!important;letter-spacing:-.025em!important}
+  .admin-home-page .compact-heading p,
+  .admin-dashboard-home .compact-heading p{font-size:13px!important;line-height:1.4!important}
+  .admin-home-action strong,
+  .neat-admin-grid .admin-home-action strong,
+  .admin-home-grid.compact-dashboard .admin-home-action strong{font-size:15px!important;line-height:1.15!important;font-weight:800!important;letter-spacing:-.01em!important}
+  .admin-home-action small,
+  .neat-admin-grid .admin-home-action small,
+  .admin-home-grid.compact-dashboard .admin-home-action small{font-size:10.5px!important;line-height:1.28!important;color:#667789!important}
+
+  /* Common premium hierarchy across opened admin modules */
+  .dashboard-card .card-heading h2,
+  .dashboard-card .compact-heading h2,
+  .compact-page .compact-heading h2{font-size:25px!important;line-height:1.1!important;letter-spacing:-.02em!important}
+  .dashboard-card .card-heading p,
+  .dashboard-card .compact-heading p,
+  .compact-page .compact-heading p{font-size:12px!important;line-height:1.4!important}
+  .dashboard-card .section-title h3,
+  .compact-page .section-title h3{font-size:18px!important;line-height:1.15!important}
+  .dashboard-card .section-title p,
+  .compact-page .section-title p{font-size:11px!important;line-height:1.35!important}
+  .dashboard-card .metric-grid span{font-size:10px!important;font-weight:750!important}
+  .dashboard-card .metric-grid small{font-size:9.5px!important}
+  .dashboard-card .primary,
+  .dashboard-card .secondary{font-size:13px!important;font-weight:800!important}
+}
+
+@media (max-width:390px){
+  .admission-card .card-heading h2,
+  .student-dashboard .compact-profile-head h2,
+  .student-home-page .compact-profile-head h2{font-size:25px!important}
+  .student-home-card strong,
+  .admin-home-action strong,
+  .neat-admin-grid .admin-home-action strong{font-size:14px!important}
+  .student-home-card small,
+  .admin-home-action small,
+  .neat-admin-grid .admin-home-action small{font-size:10px!important}
+}
+
+/* HMOS V3.6.0 — institute branding, fee alerts and premium print */
+.institute-brand{align-items:center;gap:18px}
+.institute-brand h1{font-size:clamp(28px,6vw,46px);line-height:1.05;margin:4px 0 8px}
+.institute-brand-logo,.institute-brand-letter{width:96px;height:96px;border-radius:24px;background:#fff;object-fit:cover;display:grid;place-items:center;font-size:42px;font-weight:900;color:var(--brand-primary);box-shadow:0 12px 30px rgba(0,0,0,.14)}
+.shell[style] .hero{background:linear-gradient(145deg,var(--brand-primary),color-mix(in srgb,var(--brand-primary),#000 16%))}
+.branding-preview{border:3px solid #0b4f8a;border-radius:18px;padding:18px;background:#f7fbff;display:flex;flex-direction:column;gap:5px}
+.branding-preview strong{font-size:22px}.branding-preview span{color:#667789}
+.gateway-letter{display:grid!important;place-items:center;width:54px;height:54px;border-radius:17px;background:#e6f2ff;color:#0b4f8a;font-size:23px!important;font-weight:900}
+.cinema-bed.fee-overdue{background:#fff0f0!important;border-color:#d93636!important;color:#9f1d1d!important;box-shadow:0 0 0 3px rgba(217,54,54,.12)}
+.cinema-bed.fee-overdue small{color:#b42323!important;font-weight:800}
+.button-link{text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.resident-call-card{display:flex;flex-direction:column;gap:7px;padding:16px;border-radius:16px;background:#f4f8fc}.resident-call-card strong{font-size:20px}.resident-call-card span,.resident-call-card p{margin:0;color:#5f7182}
+@media(max-width:700px){.institute-brand-logo,.institute-brand-letter{width:74px;height:74px;border-radius:20px;font-size:34px}.institute-brand h1{font-size:30px}.branding-preview strong{font-size:19px}}
+@media print{
+  body::before{content:attr(data-print-institute) "\A" attr(data-print-address);white-space:pre;display:block;text-align:center;font-size:22px;font-weight:800;padding:0 0 16px;border-bottom:2px solid #111;margin-bottom:18px}
+  .hero,footer,.back,.pwa-install-button,.modal-layer{display:none!important}
+  .card{box-shadow:none!important;border:0!important;margin:0!important;max-width:none!important}
+}
+
+
+/* V3.7 approvals, notifications and data safety */
+.live-badge{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 7px;border-radius:999px;background:#b42318;color:#fff;font-size:12px;font-weight:800;margin-left:6px}
+.approval-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}.approval-summary article{border:1px solid #dbe5ef;border-radius:14px;padding:12px;background:#f8fbfe}.approval-summary span{display:block;font-size:12px;color:#617286}.approval-summary strong{font-size:22px;color:#0b3b73}
+.approval-row,.audit-row{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #dbe5ef;border-radius:14px;padding:13px;margin:9px 0;background:#fff}.approval-row>div,.audit-row>div{display:grid;gap:3px}.approval-row span,.approval-row small,.audit-row span,.audit-row small{font-size:12px;color:#63758a}.approval-actions{display:flex;gap:7px;flex-wrap:wrap}
+.notification-row{width:100%;display:grid;text-align:left;gap:4px;border:1px solid #dbe5ef;border-radius:14px;padding:13px;margin:9px 0;background:#fff;color:#17324d}.notification-row.unread{border-color:#1677c8;background:#eef7ff;box-shadow:inset 4px 0 0 #1677c8}.notification-row span{font-size:13px;color:#50677d}.notification-row small{font-size:11px;color:#74879a}
+@media(min-width:700px){.approval-summary{grid-template-columns:repeat(5,minmax(0,1fr))}}
+
+/* HMOS V4 stability status banner */
+.hmos-connection-banner{position:fixed;z-index:99999;left:12px;right:12px;top:max(12px,env(safe-area-inset-top));padding:10px 14px;border-radius:12px;background:#102a43;color:#fff;font:700 13px/1.35 system-ui,-apple-system,Segoe UI,sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.22);text-align:center}.hmos-connection-banner[data-type="warning"]{background:#8a4b08}.hmos-connection-banner[data-type="success"]{background:#176b45}
+
+
+/* V4.1 Smart admission and admin access */
+.admission-status-check{margin-top:18px;padding:18px;border:1px solid #dbe5ee;border-radius:18px;background:#f8fbfd}.admission-status-check h3{margin:4px 0 6px;font-size:20px}.admission-status-check p{margin:0 0 12px;color:#607080}.admission-status-check form{display:grid;grid-template-columns:1fr auto;gap:10px}.admission-status-check input{min-width:0;border:1px solid #cbd8e2;border-radius:12px;padding:13px;font-size:16px}.status-result{margin-top:14px;padding:16px;border-radius:16px;border:1px solid #dce5ec}.status-result h3{margin:8px 0 5px}.status-result.approved{background:#f1fbf6;border-color:#bfe4cf}.status-result.pending{background:#fff9ec;border-color:#edd7a1}.status-result.rejected{background:#fff3f3;border-color:#efc2c2}.status-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.compact-loading{min-height:auto;padding:16px}.print-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:520px){.admission-status-check form,.status-actions,.print-grid{grid-template-columns:1fr}.admission-status-check{padding:14px}}
+
+
+/* HMOS V4.3 System Health */
+.health-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}.health-grid article{border:1px solid #dbe6f0;border-radius:16px;padding:16px;background:#fff;display:flex;flex-direction:column;gap:5px;min-height:105px}.health-grid span{font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em}.health-grid strong{font-size:20px;color:#17324d}.health-grid small{font-size:13px;color:#64748b}.health-grid .health-ok{border-color:#b9dfd2;background:#f4fbf8}.health-grid .health-bad{border-color:#f1b8b8;background:#fff7f7}.health-grid .health-warn{border-color:#ead49b;background:#fffaf0}.health-actions{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 4px}@media(max-width:520px){.health-grid{grid-template-columns:1fr 1fr;gap:9px}.health-grid article{padding:13px;min-height:98px}.health-grid strong{font-size:17px}.health-actions>*{flex:1}}
+
+/* HMOS V4.4.0 — Live Operations & Visual Bed Status */
+.live-ops-panel{margin:18px 0 22px;padding:18px;border:1px solid #d9e4ec;border-radius:22px;background:linear-gradient(180deg,#f9fcff,#f3f8fc)}
+.live-ops-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.live-ops-head h3{margin:3px 0 0;font-size:1.35rem}.live-metrics-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.live-metrics-grid article{padding:14px;border:1px solid #dce6ee;border-radius:16px;background:#fff}.live-metrics-grid span{display:block;font-size:.78rem;color:#68798a;font-weight:700}.live-metrics-grid strong{display:block;margin:4px 0;font-size:1.55rem;color:#102b49}.live-metrics-grid small,.live-metrics-note{color:#6b7b89}.live-metrics-note{margin:12px 2px 0;font-size:.82rem}
+.cinema-bed.fee-due{border-color:#d84a4a;background:#fff0f0}.cinema-bed.fee-due small{color:#b42318;font-weight:700}.cinema-bed.outside{border-color:#e39b30;background:#fff8e9}.cinema-bed.outside small{color:#9a5b00;font-weight:700}.resident-bed-details{display:grid;gap:8px}.resident-bed-details p{margin:0;padding:10px 12px;border:1px solid #e0e8ef;border-radius:12px;background:#f8fbfd}.link-button{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+@media(max-width:640px){.live-metrics-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.live-ops-panel{padding:14px}.live-metrics-grid article{padding:12px}.live-metrics-grid strong{font-size:1.35rem}}
+
+
+/* V4.5 Payment Compatibility */
+.payment-compatible-box{display:grid;gap:16px}.payment-payee,.payment-upi-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;border:1px solid var(--line,#d8e3ec);border-radius:16px;background:#fff}.payment-payee span,.payment-upi-row span,.payment-qr-wrap>span{display:block;font-size:.78rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#6c7b8e}.payment-payee strong,.payment-upi-row strong{font-size:1.05rem;overflow-wrap:anywhere}.payment-qr-wrap{display:grid;justify-items:center;gap:12px;padding:18px;border:1px dashed #b8cad8;border-radius:18px;background:#fff}.payment-qr-image{display:block;width:min(260px,80vw);aspect-ratio:1;object-fit:contain;border-radius:12px;background:#fff}.payment-action-row{display:flex;gap:10px;flex-wrap:wrap}.qr-settings-preview{display:grid;justify-items:center;gap:10px;min-height:120px;padding:16px;border:1px dashed #b8cad8;border-radius:18px}.qr-settings-preview img{width:min(240px,75vw);aspect-ratio:1;object-fit:contain;border-radius:12px;background:#fff}
+
+/* HMOS v5 payment and mobile polish */
+.payment-upi-value{min-width:0;flex:1}.payment-upi-row strong{white-space:nowrap;overflow-wrap:normal;word-break:normal;font-size:clamp(.9rem,4vw,1.05rem)}.payment-contact-link{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;border:1px solid var(--line,#d8e3ec);border-radius:16px;background:#fff;color:inherit;text-decoration:none}.payment-contact-link span{font-size:.78rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#6c7b8e}.payment-contact-link strong{color:#0b4f8a}@media(max-width:420px){.payment-upi-row{align-items:flex-start}.payment-upi-row .compact-button{flex:0 0 auto;padding-inline:12px}.payment-upi-row strong{font-size:.88rem}.payment-contact-link{align-items:flex-start;flex-direction:column;gap:4px}}
+
+/* V5.1 Admission approval polish */
+.pending-admission-card{align-items:stretch;gap:14px}
+.pending-admission-card .transaction-box{display:flex;flex-direction:column;gap:7px;min-width:210px;padding:14px;border:1px solid #dbe5ee;border-radius:16px;background:#f8fbfd}
+.pending-admission-card .transaction-box code{font-size:15px;font-weight:800;overflow-wrap:anywhere;color:#0a3158}
+.pending-admission-card .fee-amounts{grid-template-columns:auto auto;align-content:start}
+@media(max-width:720px){.pending-admission-card .transaction-box{min-width:0;width:100%}.pending-admission-card .credential-actions{width:100%;display:grid;grid-template-columns:1fr}.pending-admission-card .credential-actions button{width:100%}}
