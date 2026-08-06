@@ -26,3 +26,4 @@ In **Settings → Pages** choose:
 - Folder: `/ (root)`
 
 The existing Firebase project and Firestore data are unchanged.
+Deployment refresh
