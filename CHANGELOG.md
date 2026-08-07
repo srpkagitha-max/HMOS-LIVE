@@ -1,3 +1,12 @@
+# HMOS Changelog
+
+## 4.5.3 – Backup & Recovery V1
+- Added real downloadable institute JSON backup.
+- Added backup-file verification before recovery.
+- Kept daily snapshot history and health status.
+- Automatic scheduled Firestore exports remain a backend/Google Cloud feature.
+- No automatic destructive restore is enabled in V1.
+
 ## V4.5.1 - Payment UX
 - Added clear 2-method admission payment instructions.
 - Fixed Copy UPI ID with clipboard fallback.

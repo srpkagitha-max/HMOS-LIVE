@@ -416,3 +416,7 @@ html,body{max-width:100%;overflow-x:hidden}
   .payment-qr-button{width:min(100%,210px)!important}
   .payment-qr-image,.payment-qr-button .payment-qr-image{max-width:200px!important}
 }
+
+
+/* HMOS V4.5.3 Backup & Recovery V1 */
+.backup-action-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}.backup-action-grid>*{width:100%;min-width:0}.backup-check-card{margin:18px 0;padding:18px;border:1px solid #d9e4ee;border-radius:18px;background:#f8fbfe}.backup-check-card h3{margin:5px 0 6px}.backup-check-card p{margin:0 0 12px;color:#5b6877}.backup-check-card input[type=file]{display:block;width:100%;max-width:100%;box-sizing:border-box;padding:12px;border:1px dashed #b8c9d8;border-radius:14px;background:#fff}.backup-check-card .status-result{margin-top:14px}.compact-section{min-width:0}@media(max-width:700px){.backup-action-grid{grid-template-columns:1fr}.backup-check-card{padding:14px}.backup-check-card input[type=file]{font-size:14px}}

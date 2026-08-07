@@ -993,6 +993,34 @@ export async function softDeleteRecord({collectionName,recordId,instituteCode,de
 export async function listRecycleBin(instituteCodeValue){const code=normalizeCode(instituteCodeValue),q=query(collection(db,"deletedRecords"),where("instituteCode","==",code),limit(500)),snap=await getDocs(q);return snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.status==="deleted");}
 export async function restoreDeletedRecord(item){const ref=doc(db,item.collectionName,item.recordId);await updateDoc(ref,{isDeleted:false,status:item.previousStatus||"active",restoredAt:serverTimestamp(),updatedAt:serverTimestamp()});await updateDoc(doc(db,"deletedRecords",item.id),{status:"restored",restoredAt:serverTimestamp()});await createAuditLog({instituteCode:item.instituteCode,actorType:"admin",action:"restore",entityType:item.collectionName,entityId:item.recordId,summary:"Record restored from recycle bin"});return true;}
 export async function createBackupSnapshot(instituteCodeValue){const code=normalizeCode(instituteCodeValue);const names=["students","pendingAdmissions","rooms","fees","payments","dailyMenus","mealAttendance","movements","complaints","approvalRequests","notifications","auditLogs"];const counts={};for(const name of names){const q=query(collection(db,name),where("instituteCode","==",code),limit(5000));const snap=await getDocs(q);counts[name]=snap.size;}const id=`${code}-${new Date().toISOString().slice(0,10)}`;const data={id,instituteCode:code,backupDate:new Date().toISOString().slice(0,10),recordCounts:counts,status:"snapshot_complete",note:"Metadata snapshot created. Full Firestore export requires a scheduled Cloud Function.",createdAt:serverTimestamp()};await setDoc(doc(db,"backupJobs",id),data,{merge:true});await createAuditLog({instituteCode:code,actorType:"admin",action:"backup_snapshot",entityType:"backupJobs",entityId:id,summary:"Daily backup metadata snapshot created"});return data;}
+
+export async function exportInstituteBackup(instituteCodeValue){
+  const code=normalizeCode(instituteCodeValue);
+  if(!code) throw Object.assign(new Error("Institute code is required"),{code:"missing-institute-code"});
+  const collectionNames=["students","pendingAdmissions","rooms","fees","payments","dailyMenus","mealAttendance","movements","complaints","approvalRequests","notifications","auditLogs","deletedRecords","backupJobs"];
+  const collections={};
+  let totalRecords=0;
+  for(const name of collectionNames){
+    try{
+      const q=query(collection(db,name),where("instituteCode","==",code),limit(5000));
+      const snap=await withTimeout(getDocs(q),20000,`backup-${name}-timeout`);
+      const rows=snap.docs.map(d=>({id:d.id,...serializeBackupValue(d.data())}));
+      collections[name]=rows;
+      totalRecords+=rows.length;
+    }catch(error){
+      if(error?.code==="permission-denied"){collections[name]=[];continue;}
+      throw error;
+    }
+  }
+  return {format:"HMOS_INSTITUTE_BACKUP_V1",appVersion:"4.5.3",generatedAt:new Date().toISOString(),instituteCode:code,totalRecords,collections};
+}
+function serializeBackupValue(value){
+  if(value===null||value===undefined)return value??null;
+  if(value?.toDate instanceof Function)return value.toDate().toISOString();
+  if(Array.isArray(value))return value.map(serializeBackupValue);
+  if(typeof value==="object"){const out={};for(const [k,v] of Object.entries(value))out[k]=serializeBackupValue(v);return out;}
+  return value;
+}
 export async function listBackupSnapshots(instituteCodeValue){const code=normalizeCode(instituteCodeValue),q=query(collection(db,"backupJobs"),where("instituteCode","==",code),limit(100)),snap=await getDocs(q);return snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.backupDate||"").localeCompare(String(a.backupDate||"")));}
 export async function findDuplicateAdmissions(input){const code=normalizeCode(input.instituteCode),phone=cleanText(input.studentPhone).replace(/\D/g,""),parent=cleanText(input.parentPhone).replace(/\D/g,""),name=cleanText(input.studentName).toLowerCase(),dob=cleanText(input.dateOfBirth),aadhaar=cleanText(input.aadhaarLast4);const q=query(collection(db,"students"),where("instituteCode","==",code),limit(1000));const snap=await getDocs(q);return snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>!x.isDeleted&&((phone&&cleanText(x.studentPhone)===phone)||(name&&parent&&cleanText(x.studentName).toLowerCase()===name&&cleanText(x.parentPhone)===parent)||(dob&&aadhaar&&cleanText(x.dateOfBirth)===dob&&cleanText(x.aadhaarLast4)===aadhaar)));}
 
