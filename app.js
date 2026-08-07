@@ -9,10 +9,10 @@ import {
   submitStudentFeePaymentRequest, getInstituteBranding, saveInstituteBranding, saveAdmissionFeeSettings,
   createApprovalRequest, listApprovalRequests, decideApprovalRequest, createNotification, listNotifications, markNotificationRead, createAuditLog, listAuditLogs, softDeleteRecord, listRecycleBin, restoreDeletedRecord, createBackupSnapshot, listBackupSnapshots, exportInstituteBackup, restoreInstituteBackup, findDuplicateAdmissions,
   loginInstituteAdmin, changeInstituteAdminCredentials, checkAdmissionStatus, getSystemHealth, getInstituteLiveMetrics, reconcileResidentBedAssignments
-} from "./firebase-service.js?v=4.5.5";
+} from "./firebase-service.js?v=4.5.6";
 
 const app = document.querySelector("#app");
-const HMOS_VERSION = "4.5.5";
+const HMOS_VERSION = "4.5.6";
 window.__HMOS_VERSION__ = HMOS_VERSION;
 
 const activeOperations = new Set();
@@ -390,9 +390,65 @@ async function renderEntryExit(){
 }
 async function renderComplaintsAdmin(){
  const i=state.instituteSession;if(!i){state.screen="institute";return render();}
- app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page"><button id="complaints-back" class="back">← Institute Home</button><div class="compact-heading"><span class="step">Resident support</span><h2>Complaints</h2><p>Review and resolve resident complaints.</p></div><div id="complaint-admin-list"><div class="loading-card"><div class="loader"></div></div></div></section>`,true);
+ app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page"><button id="complaints-back" class="back">← Institute Home</button><div class="compact-heading"><span class="step">Resident support</span><h2>Complaints</h2><p>Tap a complaint to review full details and update its status.</p></div><div id="complaint-admin-list"><div class="loading-card"><div class="loader"></div></div></div></section>`,true);
  document.querySelector("#complaints-back").onclick=()=>{state.screen="admin-home";render();};
- try{state.complaints=await listInstituteComplaints(i.instituteCode);document.querySelector("#complaint-admin-list").innerHTML=state.complaints.map(c=>`<article class="compact-list-row"><div><strong>${esc(c.studentName||c.studentId)}</strong><span>${esc(c.category||"Other")} · ${esc(c.subject||"Complaint")}</span><small>${esc(c.details||"")} · ${esc(c.status||"submitted")}</small></div><select class="compact-select" data-complaint-status="${esc(c.id)}"><option value="submitted">Submitted</option><option value="in-review">In Review</option><option value="resolved">Resolved</option><option value="rejected">Rejected</option></select></article>`).join("")||'<div class="empty-state compact-empty"><strong>No complaints.</strong></div>';document.querySelectorAll("[data-complaint-status]").forEach(s=>{s.value=state.complaints.find(c=>c.id===s.dataset.complaintStatus)?.status||"submitted";s.onchange=()=>updateComplaintStatus(s.dataset.complaintStatus,s.value);});}catch(err){document.querySelector("#complaint-admin-list").innerHTML=`<p class="form-message show error">${esc(err.code||"Could not load")}</p>`;}
+
+ const complaintDate=c=>{
+   const raw=c?.createdAt||c?.submittedAt||c?.updatedAt;
+   try{
+     const d=raw?.toDate?raw.toDate():(raw?.seconds?new Date(raw.seconds*1000):(raw?new Date(raw):null));
+     return d && !Number.isNaN(d.getTime()) ? d.toLocaleString() : "Not available";
+   }catch{return "Not available";}
+ };
+ const statusLabel=s=>({"submitted":"Submitted","in-review":"In Review","resolved":"Resolved","rejected":"Rejected"}[s]||s||"Submitted");
+
+ const openComplaint=c=>{
+   const overlay=document.createElement("div");
+   overlay.className="complaint-detail-overlay";
+   overlay.innerHTML=`<section class="complaint-detail-sheet" role="dialog" aria-modal="true" aria-label="Complaint details">
+     <div class="complaint-detail-head"><div><span class="step">Complaint details</span><h2>${esc(c.subject||"Complaint")}</h2></div><button type="button" class="complaint-close" aria-label="Close">×</button></div>
+     <div class="complaint-detail-body">
+       <div class="complaint-detail-resident"><strong>${esc(c.studentName||c.studentId||"Resident")}</strong><span>${esc(c.studentId||"")}</span></div>
+       <div class="complaint-detail-grid">
+         <div><small>Category</small><strong>${esc(c.category||"Other")}</strong></div>
+         <div><small>Submitted</small><strong>${esc(complaintDate(c))}</strong></div>
+       </div>
+       <div class="complaint-full-text"><small>Complaint</small><p>${esc(c.details||"No details provided.")}</p></div>
+       <label class="field"><span>Status</span><select id="complaint-detail-status">
+         <option value="submitted">Submitted</option><option value="in-review">In Review</option><option value="resolved">Resolved</option><option value="rejected">Rejected</option>
+       </select></label>
+       <p id="complaint-detail-message" class="form-message"></p>
+       <button type="button" id="complaint-detail-save" class="primary">Save Status</button>
+     </div>
+   </section>`;
+   document.body.appendChild(overlay);
+   const close=()=>overlay.remove();
+   overlay.querySelector(".complaint-close").onclick=close;
+   overlay.onclick=e=>{if(e.target===overlay)close();};
+   const select=overlay.querySelector("#complaint-detail-status");
+   select.value=c.status||"submitted";
+   overlay.querySelector("#complaint-detail-save").onclick=async()=>{
+     const btn=overlay.querySelector("#complaint-detail-save"),msg=overlay.querySelector("#complaint-detail-message");
+     btn.disabled=true;msg.textContent="Saving…";msg.className="form-message show";
+     try{
+       await updateComplaintStatus(c.id,select.value);
+       c.status=select.value;
+       msg.textContent="Status updated.";msg.className="form-message show success-message";
+       const row=document.querySelector(`[data-complaint-open="${CSS.escape(c.id)}"]`);
+       if(row){const badge=row.querySelector(".complaint-status-badge");if(badge)badge.textContent=statusLabel(c.status);}
+       setTimeout(close,450);
+     }catch(err){
+       msg.textContent=humanError(err,"Could not update complaint status.");msg.className="form-message show error";
+     }finally{btn.disabled=false;}
+   };
+ };
+ try{
+   state.complaints=await listInstituteComplaints(i.instituteCode);
+   document.querySelector("#complaint-admin-list").innerHTML=state.complaints.map(c=>`<button type="button" class="compact-list-row complaint-open-row" data-complaint-open="${esc(c.id)}"><div><strong>${esc(c.studentName||c.studentId)}</strong><span>${esc(c.category||"Other")} · ${esc(c.subject||"Complaint")}</span><small>${esc(c.details||"")}</small></div><span class="complaint-status-badge">${esc(statusLabel(c.status))}</span></button>`).join("")||'<div class="empty-state compact-empty"><strong>No complaints.</strong></div>';
+   document.querySelectorAll("[data-complaint-open]").forEach(row=>row.onclick=()=>{const c=state.complaints.find(x=>x.id===row.dataset.complaintOpen);if(c)openComplaint(c);});
+ }catch(err){
+   document.querySelector("#complaint-admin-list").innerHTML=`<p class="form-message show error">${esc(err.code||"Could not load")}</p>`;
+ }
 }
 function renderPdfReports(){const i=state.instituteSession;if(!i){state.screen="institute";return render();}const reports=["All Residents PDF","Pending Fees PDF","Fees Due Next Week PDF","Breakfast Attendance PDF","Lunch Attendance PDF","Dinner Attendance PDF","Currently Outside PDF","Complaints PDF"];app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page"><button id="pdf-back" class="back">← Institute Home</button><div class="compact-heading"><span class="step">Reports</span><h2>PDF’s</h2><p>Open a report and use Print → Save as PDF.</p></div><div class="compact-report-grid">${reports.map((r,n)=>`<button class="secondary compact-report" data-report="${n}">${r}</button>`).join("")}</div></section>`,true);document.querySelector("#pdf-back").onclick=()=>{state.screen="admin-home";render();};document.querySelectorAll("[data-report]").forEach(b=>b.onclick=()=>{prepareInstitutePrint(reports[Number(b.dataset.report)].replace(/ PDF$/,""));window.print();});}
 

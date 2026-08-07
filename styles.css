@@ -420,3 +420,23 @@ html,body{max-width:100%;overflow-x:hidden}
 
 /* HMOS V4.5.3 Backup & Recovery V1 */
 .backup-action-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}.backup-action-grid>*{width:100%;min-width:0}.backup-check-card{margin:18px 0;padding:18px;border:1px solid #d9e4ee;border-radius:18px;background:#f8fbfe}.backup-check-card h3{margin:5px 0 6px}.backup-check-card p{margin:0 0 12px;color:#5b6877}.backup-check-card input[type=file]{display:block;width:100%;max-width:100%;box-sizing:border-box;padding:12px;border:1px dashed #b8c9d8;border-radius:14px;background:#fff}.backup-check-card .status-result{margin-top:14px}.compact-section{min-width:0}@media(max-width:700px){.backup-action-grid{grid-template-columns:1fr}.backup-check-card{padding:14px}.backup-check-card input[type=file]{font-size:14px}}
+
+
+/* V4.5.6 complaint detail view */
+.complaint-open-row{width:100%;text-align:left;border:1px solid #d8e2e9;background:#fff;color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 18px;border-radius:18px;font:inherit}
+.complaint-open-row>div{min-width:0;display:flex;flex-direction:column}
+.complaint-open-row small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.complaint-status-badge{flex:0 0 auto;padding:7px 10px;border-radius:999px;background:#edf4fb;color:#0c4e80;font-weight:800;font-size:.78rem}
+.complaint-detail-overlay{position:fixed;inset:0;z-index:9999;background:rgba(10,28,43,.48);display:flex;align-items:flex-end;justify-content:center}
+.complaint-detail-sheet{width:min(100%,720px);max-height:88vh;overflow:auto;background:#fff;border-radius:30px 30px 0 0;box-shadow:0 -18px 50px rgba(0,0,0,.18)}
+.complaint-detail-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:24px 24px 18px;border-bottom:1px solid #dde5eb}
+.complaint-detail-head h2{margin:6px 0 0}
+.complaint-close{border:0;background:#eef5fa;color:#0c4e80;width:48px;height:48px;border-radius:16px;font-size:2rem;line-height:1;cursor:pointer}
+.complaint-detail-body{padding:22px 24px 28px;display:grid;gap:18px}
+.complaint-detail-resident{background:#f4f7fb;border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:4px}
+.complaint-detail-resident strong{font-size:1.15rem}.complaint-detail-resident span{color:#6c7b89}
+.complaint-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.complaint-detail-grid>div,.complaint-full-text{border:1px solid #dce5eb;border-radius:16px;padding:14px}
+.complaint-detail-grid small,.complaint-full-text small{display:block;color:#71808e;font-weight:700;margin-bottom:5px}
+.complaint-full-text p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
+@media(max-width:520px){.complaint-detail-grid{grid-template-columns:1fr}.complaint-open-row{align-items:flex-start;flex-direction:column}.complaint-status-badge{align-self:flex-start}}

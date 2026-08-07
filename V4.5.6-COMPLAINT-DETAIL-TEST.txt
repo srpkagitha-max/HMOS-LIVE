@@ -1,0 +1,8 @@
+HMOS V4.5.6 COMPLAINT DETAIL TEST
+
+1. Admin -> Complaints.
+2. Tap the complaint card itself.
+3. A bottom detail sheet should open.
+4. Confirm resident name, category, subject, full complaint text and status.
+5. Change status and tap Save Status.
+6. Close/reopen and confirm the saved status.

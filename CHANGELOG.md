@@ -1,3 +1,10 @@
+# HMOS V4.5.6 — Complaint Detail View
+
+- Admin complaint cards are now tappable.
+- Opens a mobile-friendly full complaint detail sheet.
+- Shows resident, category, submitted time (when available), full complaint text and current status.
+- Admin can update and save complaint status inside the detail view.
+
 # HMOS V4.5.5 — Bed Allotment Sync Patch
 
 - Adds a conservative room/bed reconciliation when Admin opens Beds.
