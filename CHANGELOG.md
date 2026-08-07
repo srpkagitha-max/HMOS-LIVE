@@ -1,5 +1,12 @@
 # HMOS Changelog
 
+## 4.5.4 – Backup & Recovery V2
+- Added verified same-institute backup recovery.
+- Added automatic pre-restore JSON safety download and pre-restore snapshot.
+- Added RESTORE confirmation gate and safe merge recovery mode.
+- Recovery preserves newer live records instead of deleting them.
+- Restore actions are written to Audit Logs.
+
 ## 4.5.3 – Backup & Recovery V1
 - Added real downloadable institute JSON backup.
 - Added backup-file verification before recovery.

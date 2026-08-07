@@ -1012,7 +1012,7 @@ export async function exportInstituteBackup(instituteCodeValue){
       throw error;
     }
   }
-  return {format:"HMOS_INSTITUTE_BACKUP_V1",appVersion:"4.5.3",generatedAt:new Date().toISOString(),instituteCode:code,totalRecords,collections};
+  return {format:"HMOS_INSTITUTE_BACKUP_V1",appVersion:"4.5.4",generatedAt:new Date().toISOString(),instituteCode:code,totalRecords,collections};
 }
 function serializeBackupValue(value){
   if(value===null||value===undefined)return value??null;
@@ -1021,6 +1021,41 @@ function serializeBackupValue(value){
   if(typeof value==="object"){const out={};for(const [k,v] of Object.entries(value))out[k]=serializeBackupValue(v);return out;}
   return value;
 }
+
+function reviveBackupValue(value){
+  if(Array.isArray(value))return value.map(reviveBackupValue);
+  if(value&&typeof value==="object"){const out={};for(const [k,v] of Object.entries(value))out[k]=reviveBackupValue(v);return out;}
+  if(typeof value==="string"&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(value)){const d=new Date(value);if(!Number.isNaN(d.getTime()))return Timestamp.fromDate(d);}
+  return value;
+}
+export async function restoreInstituteBackup(payload,instituteCodeValue){
+  const code=normalizeCode(instituteCodeValue);
+  if(!code)throw Object.assign(new Error("Institute code is required"),{code:"missing-institute-code"});
+  if(payload?.format!=="HMOS_INSTITUTE_BACKUP_V1"||normalizeCode(payload?.instituteCode)!==code||!payload?.collections)throw Object.assign(new Error("Backup file does not match this institute"),{code:"backup-institute-mismatch"});
+  const allowed=["students","pendingAdmissions","rooms","fees","payments","dailyMenus","mealAttendance","movements","complaints","approvalRequests","notifications","deletedRecords"];
+  let restoredRecords=0,restoredCollections=0;
+  for(const name of allowed){
+    const rows=Array.isArray(payload.collections[name])?payload.collections[name]:[];
+    if(!rows.length)continue;
+    restoredCollections++;
+    for(let offset=0;offset<rows.length;offset+=400){
+      const batch=writeBatch(db);
+      for(const row of rows.slice(offset,offset+400)){
+        const id=cleanText(row?.id);
+        if(!id)continue;
+        const revived=reviveBackupValue(row);
+        revived.instituteCode=code;
+        revived.recoveredAt=serverTimestamp();
+        batch.set(doc(db,name,id),revived,{merge:false});
+        restoredRecords++;
+      }
+      await batch.commit();
+    }
+  }
+  await createAuditLog({instituteCode:code,actorType:"admin",action:"backup_restore",entityType:"backup",entityId:cleanText(payload.generatedAt)||"backup",summary:`Safe backup recovery restored ${restoredRecords} records across ${restoredCollections} collections`,newValue:{backupGeneratedAt:payload.generatedAt||null,restoredRecords,restoredCollections,mode:"safe_merge"}});
+  return {restoredRecords,restoredCollections,mode:"safe_merge"};
+}
+
 export async function listBackupSnapshots(instituteCodeValue){const code=normalizeCode(instituteCodeValue),q=query(collection(db,"backupJobs"),where("instituteCode","==",code),limit(100)),snap=await getDocs(q);return snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.backupDate||"").localeCompare(String(a.backupDate||"")));}
 export async function findDuplicateAdmissions(input){const code=normalizeCode(input.instituteCode),phone=cleanText(input.studentPhone).replace(/\D/g,""),parent=cleanText(input.parentPhone).replace(/\D/g,""),name=cleanText(input.studentName).toLowerCase(),dob=cleanText(input.dateOfBirth),aadhaar=cleanText(input.aadhaarLast4);const q=query(collection(db,"students"),where("instituteCode","==",code),limit(1000));const snap=await getDocs(q);return snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>!x.isDeleted&&((phone&&cleanText(x.studentPhone)===phone)||(name&&parent&&cleanText(x.studentName).toLowerCase()===name&&cleanText(x.parentPhone)===parent)||(dob&&aadhaar&&cleanText(x.dateOfBirth)===dob&&cleanText(x.aadhaarLast4)===aadhaar)));}
 
