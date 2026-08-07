@@ -341,3 +341,78 @@
 
 /* V4.5.1 payment UX */
 .payment-instructions{display:grid;gap:10px;padding:16px;border:1px solid #d7e2ec;border-radius:16px;background:#fff}.payment-instructions p{margin:0;line-height:1.55;color:#334e68}.payment-instructions strong{color:#17324d}.payment-qr-button{display:block;border:0;padding:0;background:transparent;border-radius:14px;cursor:pointer;touch-action:manipulation}.payment-qr-button:focus-visible{outline:3px solid #0b4f8a;outline-offset:4px}.payment-qr-button .payment-qr-image{transition:transform .15s ease,box-shadow .15s ease}.payment-qr-button:active .payment-qr-image{transform:scale(.985)}
+
+/* HMOS V4.5.2 — Uniform forms + responsive payment/admission polish */
+html,body{max-width:100%;overflow-x:hidden}
+.card,.wide-card,.admission-card,.login-card,.dashboard-card,.portal-card,.form-grid,.compact-form,.field,.fee-box,.bed-booking-box,.upi-box,.payment-compatible-box,.payment-instructions,.payment-payee,.payment-upi-row,.payment-qr-wrap{min-width:0;max-width:100%}
+.field input,.field select,.field textarea,.toolbar input,.toolbar select,.admission-status-check input,.password-input-wrap input{display:block;width:100%;max-width:100%;min-width:0;box-sizing:border-box}
+.form-grid,.compact-form{width:100%;min-width:0}
+.form-grid>* ,.compact-form>*{min-width:0;max-width:100%}
+
+/* Make Institute / Admin / Student login screens visually match admission forms */
+.login-card{width:min(560px,100%)}
+.login-card .card-heading h2{font-size:32px;line-height:1.08;letter-spacing:-.035em}
+.login-card .card-heading p{font-size:14px;line-height:1.5}
+.login-card .field>span{font-size:14px;font-weight:750}
+.login-card .field input,.login-card .field select,.login-card .field textarea{font-size:15px;line-height:1.35;font-weight:500}
+.login-card .primary,.login-card .secondary{font-size:14px;font-weight:800}
+.password-input-wrap{width:100%;min-width:0;max-width:100%}
+.password-input-wrap input{padding-right:82px!important}
+.password-toggle{max-width:68px;white-space:nowrap}
+
+/* Admission and payment cards must never escape the parent card */
+.admission-card{overflow:hidden}
+.admission-card .form-grid{overflow:visible}
+.fee-box,.bed-booking-box,.upi-box{width:100%;min-width:0;overflow:hidden}
+.payment-compatible-box{width:100%;overflow:hidden}
+.payment-instructions{width:100%;overflow-wrap:anywhere;word-break:normal}
+.payment-payee,.payment-upi-row,.payment-contact-link{width:100%;min-width:0}
+.payment-payee>*,.payment-upi-row>*,.payment-contact-link>*{min-width:0}
+.payment-upi-value{min-width:0;max-width:100%}
+.payment-upi-row strong{white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important}
+.payment-qr-wrap{width:100%;overflow:hidden;text-align:center}
+.payment-qr-button{width:min(100%,280px);max-width:100%;margin:0 auto;overflow:hidden}
+.payment-qr-image,.payment-qr-button .payment-qr-image{width:100%!important;max-width:260px!important;height:auto!important;aspect-ratio:1/1;object-fit:contain;margin:0 auto}
+.payment-qr-wrap small,.form-help{max-width:100%;overflow-wrap:anywhere;line-height:1.5}
+
+/* clearer payment summary */
+.fee-box{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:16px;border:1px solid #dbe5ee;border-radius:18px;background:#f8fbfd}
+.fee-box h3{grid-column:1/-1;margin:0 0 2px}
+.fee-box .field{margin:0!important}
+
+@media(max-width:700px){
+  .card,.compact-page,.dashboard-card,.portal-card,.admission-card,.login-card{width:calc(100% - 20px)!important;max-width:calc(100% - 20px)!important;margin-left:10px!important;margin-right:10px!important}
+  .form-grid,.compact-form{grid-template-columns:minmax(0,1fr)!important;gap:0!important}
+  .form-wide{grid-column:1!important;width:100%!important}
+  .field{width:100%;min-width:0}
+  .field input,.field select,.field textarea,.login-card .field input,.admission-card .field input,.admission-card .field select,.admission-card .field textarea{width:100%!important;max-width:100%!important;min-width:0!important;font-size:14px!important;padding:10px 12px!important}
+  .field input,.field select{min-height:46px!important}
+  .field textarea{min-height:84px!important}
+  .field>span,.login-card .field>span,.admission-card .field>span{font-size:12px!important;margin-bottom:6px!important}
+  .login-card .card-heading h2,.admission-card .card-heading h2{font-size:27px!important;line-height:1.08!important}
+  .login-card .card-heading p,.admission-card .card-heading p{font-size:13px!important;line-height:1.45!important}
+  .login-card .primary,.login-card .secondary,.admission-card .primary,.admission-card .secondary{font-size:14px!important;font-weight:800!important}
+  .password-input-wrap input{padding-right:76px!important}
+  .password-toggle{right:6px;height:36px;min-width:54px;font-size:12px!important}
+  .fee-box{grid-template-columns:1fr!important;gap:0!important;padding:14px!important}
+  .fee-box h3{grid-column:1!important;margin-bottom:10px!important}
+  .payment-compatible-box{gap:12px!important}
+  .payment-instructions{padding:13px!important;gap:9px!important;font-size:13px!important}
+  .payment-instructions p{line-height:1.5!important}
+  .payment-payee,.payment-upi-row,.payment-contact-link{padding:12px!important;border-radius:14px!important}
+  .payment-upi-row{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:8px!important}
+  .payment-upi-row .compact-button{max-width:130px!important;white-space:nowrap!important}
+  .payment-qr-wrap{padding:14px 10px!important;gap:10px!important}
+  .payment-qr-button{width:min(100%,240px)!important}
+  .payment-qr-image,.payment-qr-button .payment-qr-image{max-width:220px!important}
+  .admission-status-check{width:100%;max-width:100%;overflow:hidden}
+  .admission-status-check form{grid-template-columns:1fr!important}
+  .admission-status-check button{width:100%!important}
+}
+
+@media(max-width:390px){
+  .payment-upi-row{grid-template-columns:1fr!important}
+  .payment-upi-row .compact-button{width:100%!important;max-width:none!important}
+  .payment-qr-button{width:min(100%,210px)!important}
+  .payment-qr-image,.payment-qr-button .payment-qr-image{max-width:200px!important}
+}

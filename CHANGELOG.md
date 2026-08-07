@@ -20,3 +20,12 @@
 - Added .nojekyll for direct static hosting.
 - Removed dependency on custom Firebase Hosting workflow from this package.
 - Added clean deployment/recovery guide.
+
+## V4.5.2 — Uniform UI + Mobile Payment Polish
+- Fixed admission form inputs/cards overflowing outside the main card on narrow phones.
+- Made Institute, Admin and Student login forms visually uniform with the Admission form.
+- Improved input, label, password and button sizing across mobile/tablet/desktop.
+- Kept the two-method payment flow: Copy UPI ID or tap QR to open UPI payment.
+- Fixed QR/payment instruction wrapping and mobile card overflow.
+- Improved Total Fee / Paying Now / Balance layout and small-screen stacking.
+- Bumped browser/service-worker cache version for reliable deployment updates.

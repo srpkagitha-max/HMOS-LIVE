@@ -9,10 +9,10 @@ import {
   submitStudentFeePaymentRequest, getInstituteBranding, saveInstituteBranding, saveAdmissionFeeSettings,
   createApprovalRequest, listApprovalRequests, decideApprovalRequest, createNotification, listNotifications, markNotificationRead, createAuditLog, listAuditLogs, softDeleteRecord, listRecycleBin, restoreDeletedRecord, createBackupSnapshot, listBackupSnapshots, findDuplicateAdmissions,
   loginInstituteAdmin, changeInstituteAdminCredentials, checkAdmissionStatus, getSystemHealth, getInstituteLiveMetrics
-} from "./firebase-service.js?v=4.5.1";
+} from "./firebase-service.js?v=4.5.2";
 
 const app = document.querySelector("#app");
-const HMOS_VERSION = "4.5.1";
+const HMOS_VERSION = "4.5.2";
 window.__HMOS_VERSION__ = HMOS_VERSION;
 
 const activeOperations = new Set();
