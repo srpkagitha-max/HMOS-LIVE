@@ -9,10 +9,10 @@ import {
   submitStudentFeePaymentRequest, getInstituteBranding, saveInstituteBranding, saveAdmissionFeeSettings,
   createApprovalRequest, listApprovalRequests, decideApprovalRequest, createNotification, listNotifications, markNotificationRead, createAuditLog, listAuditLogs, softDeleteRecord, listRecycleBin, restoreDeletedRecord, createBackupSnapshot, listBackupSnapshots, exportInstituteBackup, restoreInstituteBackup, findDuplicateAdmissions,
   loginInstituteAdmin, changeInstituteAdminCredentials, checkAdmissionStatus, getSystemHealth, getInstituteLiveMetrics, reconcileResidentBedAssignments
-} from "./firebase-service.js?v=4.5.8";
+} from "./firebase-service.js?v=4.5.9";
 
 const app = document.querySelector("#app");
-const HMOS_VERSION = "4.5.8";
+const HMOS_VERSION = "4.5.9";
 window.__HMOS_VERSION__ = HMOS_VERSION;
 
 const activeOperations = new Set();
@@ -812,7 +812,70 @@ function renderStudentProfile(){const s=state.studentSession;if(!s)return render
 async function renderStudentFees(){const s=state.studentSession;if(!s)return renderStudentLogin();const b=await getInstituteBranding(s.instituteCode).catch(()=>null);if(b)state.branding=b;app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page">${studentBack()}<div class="compact-heading"><h2>Fees</h2><p>View payment history and pay the outstanding balance.</p></div><div class="mini-stat-grid"><article><span>Total</span><strong>₹${Number(s.feeTotal||0).toLocaleString("en-IN")}</strong></article><article><span>Paid</span><strong>₹${Number(s.feePaid||0).toLocaleString("en-IN")}</strong></article><article><span>Balance</span><strong>₹${Number(s.feeBalance||0).toLocaleString("en-IN")}</strong></article></div>${paymentBoxHtml(Number(s.feeBalance||0),false)}<div id="student-payment-history" class="compact-section"></div><form id="student-fee-pay-form" class="compact-form">${field("student-pay-amount","Amount to Pay","number","Enter amount",Number(s.feeBalance||0)>0?s.feeBalance:"","min='1'")}${field("student-pay-reference","UPI Transaction ID","text","Enter after payment")}<p class="form-message form-wide" id="student-pay-message"></p><button class="primary form-wide">Submit Payment for Approval</button></form></section>`,true);bindStudentBack();const amountInput=document.querySelector('#student-pay-amount');bindPaymentActions(()=>Number(amountInput.value||0),`${s.studentId} Fee Payment`);amountInput.oninput=()=>{const x=document.querySelector('#payment-display-amount');if(x)x.textContent=`₹${Number(amountInput.value||0).toLocaleString('en-IN')}`;};try{const p=await listStudentPayments(s.studentId);document.querySelector("#student-payment-history").innerHTML=`<h3>Payment History</h3>${p.map(x=>`<article class="compact-list-row"><div><strong>₹${Number(x.amount||0).toLocaleString("en-IN")}</strong><span>${esc(x.mode||"UPI")} · ${esc(x.receiptNo||x.reference||"")}</span><small>${esc(x.status||"approved")}</small></div></article>`).join("")||'<p>No payments yet.</p>'}`;}catch{}
  document.querySelector("#student-fee-pay-form").onsubmit=async e=>{e.preventDefault();const amount=Number(amountInput.value||0),reference=document.querySelector("#student-pay-reference").value.trim(),m=document.querySelector("#student-pay-message"),btn=e.submitter;if(amount<=0||!reference){m.textContent="Enter payment amount and UPI Transaction ID.";m.className="form-message show error form-wide";return;}if(Number(s.feeBalance||0)>0&&amount>Number(s.feeBalance||0)){m.textContent="Amount cannot be greater than the outstanding balance.";m.className="form-message show error form-wide";return;}btn.disabled=true;btn.textContent="Submitting…";try{await submitStudentFeePaymentRequest({studentId:s.studentId,studentName:s.studentName,instituteCode:s.instituteCode,amount,reference});m.textContent="Payment submitted for Admin verification.";m.className="form-message show success-message form-wide";e.target.reset();}catch(err){m.textContent=`Could not submit payment. ${humanError(err,err.code||'Unknown error')}`;m.className="form-message show error form-wide";}finally{btn.disabled=false;btn.textContent="Submit Payment for Approval";}};}
 
-async function renderStudentAttendance(){const s=state.studentSession;if(!s)return renderStudentLogin();const meals=["breakfast","lunch","dinner","night"];app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page">${studentBack()}<div class="compact-heading"><h2>Attendance</h2><p>Mark meal and night attendance during the allowed time.</p></div><div class="meal-card-grid">${meals.map(x=>{const w=mealWindow(x);return `<article class="meal-card"><div><strong>${x[0].toUpperCase()+x.slice(1)}</strong><small>${w.label}</small></div><button class="${w.open?'primary':'secondary'} compact-button" data-meal="${x}" ${w.open?'':'disabled'}>${w.open?'Mark Attendance':'Closed'}</button><p id="meal-status-${x}"></p></article>`}).join("")}</div></section>`,true);bindStudentBack();for(const meal of meals){const w=mealWindow(meal);try{const existing=await getStudentMealAttendance(s.studentId,w.date,meal);if(existing){const b=document.querySelector(`[data-meal="${meal}"]`);b.disabled=true;b.textContent="Attendance Marked";}}catch{}document.querySelector(`[data-meal="${meal}"]`).onclick=async e=>{const b=e.currentTarget;b.disabled=true;b.textContent="Saving…";try{await submitMealAttendance({studentId:s.studentId,studentName:s.studentName,instituteCode:s.instituteCode,date:w.date,meal});b.textContent="Attendance Marked";}catch(err){b.disabled=false;b.textContent="Try Again";}};}}
+
+function mealWindow(meal){
+  const now=new Date();
+  const date=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+  const minutes=now.getHours()*60+now.getMinutes();
+  const windows={
+    breakfast:{start:5*60,end:10*60+30,label:"05:00 – 10:30"},
+    lunch:{start:11*60,end:15*60+30,label:"11:00 – 15:30"},
+    dinner:{start:18*60,end:22*60+30,label:"18:00 – 22:30"},
+    night:{start:20*60,end:23*60+59,label:"20:00 – 23:59"}
+  };
+  const w=windows[String(meal||"").toLowerCase()]||{start:0,end:0,label:"Unavailable"};
+  return {date,label:w.label,open:minutes>=w.start&&minutes<=w.end};
+}
+
+async function renderStudentAttendance(){
+  const s=state.studentSession;if(!s)return renderStudentLogin();
+  const meals=["breakfast","lunch","dinner","night"];
+  const labels={breakfast:"Breakfast",lunch:"Lunch",dinner:"Dinner",night:"Night Present"};
+  const windows=Object.fromEntries(meals.map(meal=>[meal,mealWindow(meal)]));
+
+  app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page">${studentBack()}<div class="compact-heading"><span class="step">Daily attendance</span><h2>Attendance</h2><p>Mark today’s meal or night attendance during the available time window.</p></div><div class="meal-card-grid">${meals.map(meal=>{const w=windows[meal];return `<article class="meal-card"><div><strong>${labels[meal]}</strong><small>Today · ${w.label}</small></div><button type="button" class="${w.open?"primary":"secondary"} compact-button" data-meal="${meal}" ${w.open?"":"disabled"}>${w.open?"Mark Attendance":"Closed"}</button><p id="meal-status-${meal}" class="meal-inline-status">${w.open?"Available now":"Outside attendance time"}</p></article>`}).join("")}</div><p id="attendance-page-message" class="form-message"></p></section>`,true);
+  bindStudentBack();
+
+  for(const meal of meals){
+    const w=windows[meal];
+    const button=document.querySelector(`[data-meal="${meal}"]`);
+    const status=document.querySelector(`#meal-status-${meal}`);
+    if(!button)continue;
+
+    try{
+      const existing=await getStudentMealAttendance(s.studentId,w.date,meal);
+      if(existing){
+        button.disabled=true;
+        button.textContent="Attendance Marked";
+        status.textContent="Marked for today";
+        status.classList.add("marked");
+      }
+    }catch(err){
+      console.warn("Attendance read failed:",meal,err);
+    }
+
+    if(button.disabled)continue;
+    button.onclick=async()=>{
+      button.disabled=true;
+      button.textContent="Saving…";
+      status.textContent="Saving attendance…";
+      try{
+        await submitMealAttendance({
+          studentId:s.studentId,studentName:s.studentName,
+          instituteCode:s.instituteCode,date:w.date,meal
+        });
+        button.textContent="Attendance Marked";
+        status.textContent="Marked for today";
+        status.classList.add("marked");
+      }catch(err){
+        button.disabled=false;
+        button.textContent="Try Again";
+        status.textContent=humanError(err,"Could not mark attendance.");
+        status.classList.add("error");
+      }
+    };
+  }
+}
 async function renderStudentEntryExit(){
   const s=state.studentSession;if(!s)return renderStudentLogin();
   const now=new Date();

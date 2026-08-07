@@ -1,3 +1,11 @@
+# HMOS V4.5.9 — Student Attendance Open Fix
+
+- Restores the missing mealWindow helper that prevented the Student Attendance screen from rendering.
+- Attendance card now opens reliably.
+- Shows Breakfast, Lunch, Dinner and Night Present with their time windows.
+- Existing attendance for today is detected and displayed as Attendance Marked.
+- Safer button binding avoids page failure on closed/disabled meal windows.
+
 # HMOS V4.5.8 — Outside / Returned Tap Fix
 
 - Outside Now and Returned cards now open a dedicated resident-list bottom sheet.

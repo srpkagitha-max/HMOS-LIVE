@@ -473,3 +473,9 @@ html,body{max-width:100%;overflow-x:hidden}
 .movement-list-head h2{margin:6px 0 2px}.movement-list-head p{margin:0;color:#6f8190}
 .movement-list-close{border:0;background:#eef5fa;color:#0b568f;width:48px;height:48px;border-radius:16px;font-size:2rem;line-height:1;cursor:pointer}
 .movement-list-body{padding:18px 20px 26px}
+
+
+/* V4.5.9 Student Attendance */
+.meal-inline-status{margin:8px 0 0;color:#748696;font-size:.82rem}
+.meal-inline-status.marked{color:#18784d;font-weight:700}
+.meal-inline-status.error{color:#b33131;font-weight:700}

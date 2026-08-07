@@ -1,0 +1,9 @@
+HMOS V4.5.9 STUDENT ATTENDANCE TEST
+
+1. Student login -> Attendance.
+2. Attendance page must open without error.
+3. Breakfast, Lunch, Dinner and Night Present cards must be visible.
+4. Each card must show its attendance time window.
+5. Open meal window -> Mark Attendance button enabled.
+6. Closed meal window -> button disabled and shows Closed.
+7. If already marked today, it must show Attendance Marked.
