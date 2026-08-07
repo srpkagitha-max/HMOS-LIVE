@@ -939,7 +939,23 @@ export async function getDailyMenu(instituteCodeValue,dateValue){const institute
 export async function submitMealAttendance(input){const studentId=normalizeCode(input.studentId),instituteCode=normalizeCode(input.instituteCode),meal=cleanText(input.meal).toLowerCase(),date=todayKey(input.date);if(!studentId||!instituteCode||!["breakfast","lunch","dinner","night"].includes(meal))throw Object.assign(new Error("Invalid attendance"),{code:"invalid-attendance"});const id=`${studentId}-${date}-${meal}`;const ref=doc(db,"mealAttendance",id);if((await getDoc(ref)).exists())return true;await setDoc(ref,{id,studentId,studentName:cleanText(input.studentName),instituteCode,date,meal,status:"present",createdAt:serverTimestamp()});return true;}
 export async function getStudentMealAttendance(studentIdValue,dateValue,mealValue){const id=`${normalizeCode(studentIdValue)}-${todayKey(dateValue)}-${cleanText(mealValue).toLowerCase()}`;const snap=await getDoc(doc(db,"mealAttendance",id));return snap.exists()?{id:snap.id,...snap.data()}:null;}
 export async function listInstituteMealAttendance(instituteCodeValue,dateValue){const code=normalizeCode(instituteCodeValue),date=todayKey(dateValue),q=query(collection(db,"mealAttendance"),where("instituteCode","==",code),limit(1000)),snap=await getDocs(q);return snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.date===date);}
-export async function submitMovementRequest(input){const studentId=normalizeCode(input.studentId),instituteCode=normalizeCode(input.instituteCode);if(!studentId||!instituteCode||!cleanText(input.reason)||!cleanText(input.location))throw Object.assign(new Error("Invalid movement"),{code:"invalid-movement"});const ref=doc(collection(db,"movements"));const data={id:ref.id,studentId,studentName:cleanText(input.studentName),instituteCode,reason:cleanText(input.reason),location:cleanText(input.location),leavingDate:cleanText(input.leavingDate),leavingTime:cleanText(input.leavingTime),returnDate:cleanText(input.returnDate),returnTime:cleanText(input.returnTime),status:"outside",createdAt:serverTimestamp(),updatedAt:serverTimestamp()};await setDoc(ref,data);return data;}
+export async function submitMovementRequest(input){
+  const studentId=normalizeCode(input.studentId),instituteCode=normalizeCode(input.instituteCode);
+  const latitude=Number(input.latitude),longitude=Number(input.longitude);
+  if(!studentId||!instituteCode||!cleanText(input.reason)||!cleanText(input.location))throw Object.assign(new Error("Invalid movement"),{code:"invalid-movement"});
+  if(!Number.isFinite(latitude)||!Number.isFinite(longitude))throw Object.assign(new Error("Location is required"),{code:"location-required"});
+  const ref=doc(collection(db,"movements"));
+  const data={
+    id:ref.id,studentId,studentName:cleanText(input.studentName),instituteCode,
+    reason:cleanText(input.reason),location:cleanText(input.location),
+    leavingDate:cleanText(input.leavingDate),leavingTime:cleanText(input.leavingTime),
+    returnDate:cleanText(input.returnDate),returnTime:cleanText(input.returnTime),
+    latitude,longitude,locationAccuracy:Number(input.locationAccuracy||0),
+    status:"outside",createdAt:serverTimestamp(),updatedAt:serverTimestamp()
+  };
+  await setDoc(ref,data);
+  return data;
+}
 export async function markStudentEntry(movementId){await updateDoc(doc(db,"movements",cleanText(movementId)),{status:"returned",actualReturnAt:serverTimestamp(),updatedAt:serverTimestamp()});return true;}
 export async function listInstituteMovements(instituteCodeValue){const code=normalizeCode(instituteCodeValue),q=query(collection(db,"movements"),where("instituteCode","==",code),limit(500)),snap=await getDocs(q);return snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));}
 export async function getStudentMovements(studentIdValue){const id=normalizeCode(studentIdValue),q=query(collection(db,"movements"),where("studentId","==",id),limit(250)),snap=await getDocs(q);return snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));}

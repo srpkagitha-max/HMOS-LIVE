@@ -1,0 +1,20 @@
+HMOS V4.5.7 ENTRY / EXIT V2 TEST
+
+RESIDENT
+1. Login -> Entry / Exit.
+2. Fill Reason, Where, Leaving Date/Time and Expected Return Date/Time.
+3. Tap Share Location + Submit.
+4. Allow browser location permission.
+5. Confirm success message.
+
+ADMIN
+1. Admin -> Entry / Exit.
+2. Tap Outside Now -> resident names must appear.
+3. Tap a resident name -> full details open.
+4. Confirm View Location, Call Resident, Call Parent.
+5. Tap Mark Entry for an outside resident.
+6. Tap Returned -> returned resident names must appear.
+7. Tap returned resident -> actual return time should be visible.
+
+OLDER RECORDS
+Older movement records without GPS should still open, but View Location will say location was not shared.

@@ -9,10 +9,10 @@ import {
   submitStudentFeePaymentRequest, getInstituteBranding, saveInstituteBranding, saveAdmissionFeeSettings,
   createApprovalRequest, listApprovalRequests, decideApprovalRequest, createNotification, listNotifications, markNotificationRead, createAuditLog, listAuditLogs, softDeleteRecord, listRecycleBin, restoreDeletedRecord, createBackupSnapshot, listBackupSnapshots, exportInstituteBackup, restoreInstituteBackup, findDuplicateAdmissions,
   loginInstituteAdmin, changeInstituteAdminCredentials, checkAdmissionStatus, getSystemHealth, getInstituteLiveMetrics, reconcileResidentBedAssignments
-} from "./firebase-service.js?v=4.5.6";
+} from "./firebase-service.js?v=4.5.7";
 
 const app = document.querySelector("#app");
-const HMOS_VERSION = "4.5.6";
+const HMOS_VERSION = "4.5.7";
 window.__HMOS_VERSION__ = HMOS_VERSION;
 
 const activeOperations = new Set();
@@ -384,9 +384,90 @@ async function renderKitchen(){
 }
 async function renderEntryExit(){
   const i=state.instituteSession;if(!i){state.screen="institute";return render();}
-  app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page"><button id="entry-back" class="back">← Institute Home</button><div class="compact-heading"><span class="step">Movement control</span><h2>Entry / Exit</h2><p>See who is outside and mark their return.</p></div><div class="mini-stat-grid"><article><span>Outside Now</span><strong id="outside-count">—</strong></article><article><span>Returned</span><strong id="returned-count">—</strong></article></div><div class="compact-section"><h3>Currently Outside</h3><div id="outside-list"><div class="loading-card"><div class="loader"></div></div></div></div></section>`,true);
+  app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page"><button id="entry-back" class="back">← Institute Home</button><div class="compact-heading"><span class="step">Movement control</span><h2>Entry / Exit</h2><p>Tap Outside or Returned to see resident names. Tap a resident for trip details, location and call actions.</p></div><div class="movement-summary-grid"><button id="movement-outside-tab" class="movement-summary-card active" type="button"><span>Outside Now</span><strong id="outside-count">—</strong><small>Tap to view names</small></button><button id="movement-returned-tab" class="movement-summary-card" type="button"><span>Returned</span><strong id="returned-count">—</strong><small>Tap to view names</small></button></div><div class="compact-section"><h3 id="movement-section-title">Currently Outside</h3><div id="movement-admin-list"><div class="loading-card"><div class="loader"></div></div></div></div></section>`,true);
   document.querySelector("#entry-back").onclick=()=>{state.screen="admin-home";render();};
-  try{state.movements=await listInstituteMovements(i.instituteCode);const outside=state.movements.filter(x=>x.status==="outside"),returned=state.movements.filter(x=>x.status==="returned");document.querySelector("#outside-count").textContent=outside.length;document.querySelector("#returned-count").textContent=returned.length;document.querySelector("#outside-list").innerHTML=outside.map(x=>`<article class="compact-list-row"><div><strong>${esc(x.studentName||x.studentId)}</strong><span>${esc(x.reason)} · ${esc(x.location)}</span><small>Left: ${esc(x.leavingDate||"")} ${esc(x.leavingTime||"")} · Return: ${esc(x.returnDate||"")} ${esc(x.returnTime||"")}</small></div><button class="secondary compact-button" data-mark-entry="${esc(x.id)}">Mark Entry</button></article>`).join("")||'<div class="empty-state compact-empty"><strong>No one is outside.</strong></div>';document.querySelectorAll("[data-mark-entry]").forEach(b=>b.onclick=async()=>{b.disabled=true;await markStudentEntry(b.dataset.markEntry);renderEntryExit();});}catch(err){document.querySelector("#outside-list").innerHTML=`<p class="form-message show error">${esc(err.code||"Could not load")}</p>`;}
+
+  const dateTimeText=value=>{
+    try{
+      const d=value?.toDate?value.toDate():(value?.seconds?new Date(value.seconds*1000):(value?new Date(value):null));
+      return d&&!Number.isNaN(d.getTime())?d.toLocaleString():"—";
+    }catch{return "—";}
+  };
+  const mapUrl=m=>{
+    const lat=Number(m?.latitude),lng=Number(m?.longitude);
+    return Number.isFinite(lat)&&Number.isFinite(lng)?`https://www.google.com/maps?q=${lat},${lng}`:"";
+  };
+  const openMovement=(m,students)=>{
+    const resident=students.find(s=>String(s.studentId||"")===String(m.studentId||""))||{};
+    const url=mapUrl(m);
+    const overlay=document.createElement("div");
+    overlay.className="movement-detail-overlay";
+    overlay.innerHTML=`<section class="movement-detail-sheet" role="dialog" aria-modal="true" aria-label="Movement details">
+      <div class="movement-detail-head"><div><span class="step">${m.status==="outside"?"Currently outside":"Returned resident"}</span><h2>${esc(m.studentName||resident.studentName||m.studentId||"Resident")}</h2></div><button type="button" class="movement-close" aria-label="Close">×</button></div>
+      <div class="movement-detail-body">
+        <div class="movement-detail-grid">
+          <div><small>Reason</small><strong>${esc(m.reason||"—")}</strong></div>
+          <div><small>Where</small><strong>${esc(m.location||"—")}</strong></div>
+          <div><small>Leaving</small><strong>${esc(`${m.leavingDate||""} ${m.leavingTime||""}`)}</strong></div>
+          <div><small>Expected Return</small><strong>${esc(`${m.returnDate||""} ${m.returnTime||""}`)}</strong></div>
+          ${m.actualReturnAt?`<div><small>Actual Return</small><strong>${esc(dateTimeText(m.actualReturnAt))}</strong></div>`:""}
+          <div><small>Student ID</small><strong>${esc(m.studentId||"—")}</strong></div>
+        </div>
+        <div class="movement-action-grid">
+          ${url?`<button type="button" id="movement-view-location" class="primary">📍 View Location</button>`:`<div class="movement-no-location">Location was not shared for this older record.</div>`}
+          ${resident.studentPhone?`<a class="secondary movement-call-button" href="tel:${esc(resident.studentPhone)}">Call Resident</a>`:`<button class="secondary" disabled>Call Resident unavailable</button>`}
+          ${resident.parentPhone?`<a class="secondary movement-call-button" href="tel:${esc(resident.parentPhone)}">Call Parent</a>`:`<button class="secondary" disabled>Call Parent unavailable</button>`}
+          ${m.status==="outside"?`<button type="button" id="movement-mark-entry" class="secondary">Mark Entry</button>`:""}
+        </div>
+        <p id="movement-detail-message" class="form-message"></p>
+      </div>
+    </section>`;
+    document.body.appendChild(overlay);
+    const close=()=>overlay.remove();
+    overlay.querySelector(".movement-close").onclick=close;
+    overlay.onclick=e=>{if(e.target===overlay)close();};
+    const loc=overlay.querySelector("#movement-view-location");
+    if(loc)loc.onclick=()=>window.open(url,"_blank","noopener");
+    const mark=overlay.querySelector("#movement-mark-entry");
+    if(mark)mark.onclick=async()=>{
+      const msg=overlay.querySelector("#movement-detail-message");
+      mark.disabled=true;mark.textContent="Marking…";
+      try{
+        await markStudentEntry(m.id);
+        msg.textContent="Resident marked as returned.";msg.className="form-message show success-message";
+        setTimeout(()=>{close();renderEntryExit();},500);
+      }catch(err){
+        msg.textContent=humanError(err,"Could not mark entry.");msg.className="form-message show error";
+        mark.disabled=false;mark.textContent="Mark Entry";
+      }
+    };
+  };
+
+  try{
+    const [movements,students]=await Promise.all([listInstituteMovements(i.instituteCode),listInstituteStudents(i.instituteCode)]);
+    state.movements=movements;
+    const outside=movements.filter(x=>x.status==="outside"),returned=movements.filter(x=>x.status==="returned");
+    document.querySelector("#outside-count").textContent=outside.length;
+    document.querySelector("#returned-count").textContent=returned.length;
+    const list=document.querySelector("#movement-admin-list"),title=document.querySelector("#movement-section-title");
+    const outsideTab=document.querySelector("#movement-outside-tab"),returnedTab=document.querySelector("#movement-returned-tab");
+
+    const paint=type=>{
+      const rows=type==="outside"?outside:returned;
+      title.textContent=type==="outside"?"Currently Outside":"Returned Residents";
+      outsideTab.classList.toggle("active",type==="outside");
+      returnedTab.classList.toggle("active",type==="returned");
+      list.innerHTML=rows.map(m=>`<button type="button" class="movement-resident-row" data-movement-open="${esc(m.id)}"><div><strong>${esc(m.studentName||m.studentId)}</strong><span>${esc(m.reason||"")} · ${esc(m.location||"")}</span><small>${type==="outside"?`Expected return: ${esc(`${m.returnDate||""} ${m.returnTime||""}`)}`:`Returned: ${esc(dateTimeText(m.actualReturnAt))}`}</small></div><span class="movement-row-arrow">›</span></button>`).join("")||`<div class="empty-state compact-empty"><strong>${type==="outside"?"No one is outside.":"No returned records yet."}</strong></div>`;
+      list.querySelectorAll("[data-movement-open]").forEach(row=>row.onclick=()=>{
+        const m=movements.find(x=>x.id===row.dataset.movementOpen);if(m)openMovement(m,students);
+      });
+    };
+    outsideTab.onclick=()=>paint("outside");
+    returnedTab.onclick=()=>paint("returned");
+    paint("outside");
+  }catch(err){
+    document.querySelector("#movement-admin-list").innerHTML=`<p class="form-message show error">${esc(humanError(err,"Could not load movement records."))}</p>`;
+  }
 }
 async function renderComplaintsAdmin(){
  const i=state.instituteSession;if(!i){state.screen="institute";return render();}
@@ -722,8 +803,63 @@ async function renderStudentFees(){const s=state.studentSession;if(!s)return ren
  document.querySelector("#student-fee-pay-form").onsubmit=async e=>{e.preventDefault();const amount=Number(amountInput.value||0),reference=document.querySelector("#student-pay-reference").value.trim(),m=document.querySelector("#student-pay-message"),btn=e.submitter;if(amount<=0||!reference){m.textContent="Enter payment amount and UPI Transaction ID.";m.className="form-message show error form-wide";return;}if(Number(s.feeBalance||0)>0&&amount>Number(s.feeBalance||0)){m.textContent="Amount cannot be greater than the outstanding balance.";m.className="form-message show error form-wide";return;}btn.disabled=true;btn.textContent="Submitting…";try{await submitStudentFeePaymentRequest({studentId:s.studentId,studentName:s.studentName,instituteCode:s.instituteCode,amount,reference});m.textContent="Payment submitted for Admin verification.";m.className="form-message show success-message form-wide";e.target.reset();}catch(err){m.textContent=`Could not submit payment. ${humanError(err,err.code||'Unknown error')}`;m.className="form-message show error form-wide";}finally{btn.disabled=false;btn.textContent="Submit Payment for Approval";}};}
 
 async function renderStudentAttendance(){const s=state.studentSession;if(!s)return renderStudentLogin();const meals=["breakfast","lunch","dinner","night"];app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page">${studentBack()}<div class="compact-heading"><h2>Attendance</h2><p>Mark meal and night attendance during the allowed time.</p></div><div class="meal-card-grid">${meals.map(x=>{const w=mealWindow(x);return `<article class="meal-card"><div><strong>${x[0].toUpperCase()+x.slice(1)}</strong><small>${w.label}</small></div><button class="${w.open?'primary':'secondary'} compact-button" data-meal="${x}" ${w.open?'':'disabled'}>${w.open?'Mark Attendance':'Closed'}</button><p id="meal-status-${x}"></p></article>`}).join("")}</div></section>`,true);bindStudentBack();for(const meal of meals){const w=mealWindow(meal);try{const existing=await getStudentMealAttendance(s.studentId,w.date,meal);if(existing){const b=document.querySelector(`[data-meal="${meal}"]`);b.disabled=true;b.textContent="Attendance Marked";}}catch{}document.querySelector(`[data-meal="${meal}"]`).onclick=async e=>{const b=e.currentTarget;b.disabled=true;b.textContent="Saving…";try{await submitMealAttendance({studentId:s.studentId,studentName:s.studentName,instituteCode:s.instituteCode,date:w.date,meal});b.textContent="Attendance Marked";}catch(err){b.disabled=false;b.textContent="Try Again";}};}}
-async function renderStudentEntryExit(){const s=state.studentSession;if(!s)return renderStudentLogin();const today=new Date().toISOString().slice(0,10);app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page">${studentBack()}<div class="compact-heading"><h2>Entry / Exit</h2><p>Complete all fields before submitting.</p></div><form id="student-exit-form" class="compact-form">${field("exit-reason","Reason","text","Reason for going out")}${field("exit-location","Location","text","Where are you going?")}${field("exit-date","Leaving Date","date","",today)}${field("exit-time","Leaving Time","time")}${field("return-date","Expected Return Date","date","",today)}${field("return-time","Expected Return Time","time")}<p id="exit-message" class="form-message form-wide"></p><button class="primary form-wide">Submit Exit</button></form><div id="movement-history" class="compact-section"></div></section>`,true);bindStudentBack();try{const rows=await getStudentMovements(s.studentId);document.querySelector("#movement-history").innerHTML=`<h3>History</h3>${rows.slice(0,10).map(x=>`<article class="compact-list-row"><div><strong>${esc(x.status||"outside")}</strong><span>${esc(x.reason)} · ${esc(x.location)}</span><small>${esc(x.leavingDate)} ${esc(x.leavingTime)} → ${esc(x.returnDate)} ${esc(x.returnTime)}</small></div></article>`).join("")}`;}catch{}
- document.querySelector("#student-exit-form").onsubmit=async e=>{e.preventDefault();const v=id=>document.querySelector(`#${id}`).value.trim(),msg=document.querySelector("#exit-message");if(["exit-reason","exit-location","exit-date","exit-time","return-date","return-time"].some(id=>!v(id))){msg.textContent="Complete all fields.";msg.className="form-message show error form-wide";return;}try{await submitMovementRequest({studentId:s.studentId,studentName:s.studentName,instituteCode:s.instituteCode,reason:v("exit-reason"),location:v("exit-location"),leavingDate:v("exit-date"),leavingTime:v("exit-time"),returnDate:v("return-date"),returnTime:v("return-time")});msg.textContent="Exit submitted successfully.";msg.className="form-message show success-message form-wide";}catch(err){msg.textContent=`Could not submit. ${err.code||""}`;msg.className="form-message show error form-wide";}};}
+async function renderStudentEntryExit(){
+  const s=state.studentSession;if(!s)return renderStudentLogin();
+  const now=new Date();
+  const today=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+  const nowTime=`${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
+  app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page">${studentBack()}<div class="compact-heading"><span class="step">Movement request</span><h2>Entry / Exit</h2><p>Fill the trip details. Your current GPS location is shared only when you submit.</p></div><form id="student-exit-form" class="compact-form">${field("exit-reason","Reason","text","Reason for going out")}${field("exit-location","Where","text","Where are you going?")}${field("exit-date","Leaving Date","date","",today)}${field("exit-time","Leaving Time","time","",nowTime)}${field("return-date","Expected Return Date","date","",today)}${field("return-time","Expected Return Time","time")}<div class="form-wide movement-location-note"><strong>📍 Location sharing</strong><span id="movement-location-status">Tap the button below to share your current location and submit.</span></div><p id="exit-message" class="form-message form-wide"></p><button id="share-location-submit" class="primary form-wide" type="submit">Share Location + Submit</button></form><div id="movement-history" class="compact-section"></div></section>`,true);
+  bindStudentBack();
+
+  try{
+    const rows=await getStudentMovements(s.studentId);
+    document.querySelector("#movement-history").innerHTML=`<h3>History</h3>${rows.slice(0,10).map(x=>`<article class="compact-list-row"><div><strong>${esc(x.status||"outside")}</strong><span>${esc(x.reason||"")} · ${esc(x.location||"")}</span><small>${esc(x.leavingDate||"")} ${esc(x.leavingTime||"")} → ${esc(x.returnDate||"")} ${esc(x.returnTime||"")}${x.actualReturnAt?` · Returned`:""}</small></div></article>`).join("")||'<div class="empty-state compact-empty"><strong>No movement history.</strong></div>'}`;
+  }catch{}
+
+  document.querySelector("#student-exit-form").onsubmit=async e=>{
+    e.preventDefault();
+    const v=id=>document.querySelector(`#${id}`).value.trim();
+    const msg=document.querySelector("#exit-message"),status=document.querySelector("#movement-location-status"),btn=document.querySelector("#share-location-submit");
+    if(["exit-reason","exit-location","exit-date","exit-time","return-date","return-time"].some(id=>!v(id))){
+      msg.textContent="Complete all fields first.";msg.className="form-message show error form-wide";return;
+    }
+    const leave=new Date(`${v("exit-date")}T${v("exit-time")}`);
+    const expected=new Date(`${v("return-date")}T${v("return-time")}`);
+    if(Number.isNaN(leave.getTime())||Number.isNaN(expected.getTime())||expected<=leave){
+      msg.textContent="Expected return must be after leaving time.";msg.className="form-message show error form-wide";return;
+    }
+    if(!navigator.geolocation){
+      msg.textContent="Location sharing is not supported on this device.";msg.className="form-message show error form-wide";return;
+    }
+
+    btn.disabled=true;btn.textContent="Getting Location…";status.textContent="Requesting current GPS location…";
+    navigator.geolocation.getCurrentPosition(async pos=>{
+      try{
+        status.textContent=`Location shared · accuracy about ${Math.round(pos.coords.accuracy||0)} m`;
+        btn.textContent="Submitting…";
+        await submitMovementRequest({
+          studentId:s.studentId,studentName:s.studentName,instituteCode:s.instituteCode,
+          reason:v("exit-reason"),location:v("exit-location"),
+          leavingDate:v("exit-date"),leavingTime:v("exit-time"),
+          returnDate:v("return-date"),returnTime:v("return-time"),
+          latitude:pos.coords.latitude,longitude:pos.coords.longitude,
+          locationAccuracy:Math.round(pos.coords.accuracy||0)
+        });
+        msg.textContent="Exit submitted successfully with location.";msg.className="form-message show success-message form-wide";
+        btn.textContent="Submitted";
+        setTimeout(()=>renderStudentEntryExit(),700);
+      }catch(err){
+        msg.textContent=humanError(err,"Could not submit exit.");msg.className="form-message show error form-wide";
+        btn.disabled=false;btn.textContent="Share Location + Submit";
+      }
+    },err=>{
+      status.textContent="Location was not shared.";
+      msg.textContent=err.code===1?"Location permission denied. Allow location access and try again.":"Could not get current location. Turn on GPS and try again.";
+      msg.className="form-message show error form-wide";
+      btn.disabled=false;btn.textContent="Share Location + Submit";
+    },{enableHighAccuracy:true,timeout:15000,maximumAge:15000});
+  };
+}
 async function renderStudentComplaints(){const s=state.studentSession;if(!s)return renderStudentLogin();app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page">${studentBack()}<div class="compact-heading"><h2>Complaints</h2><p>Send a complaint to the institute admin.</p></div><form id="complaint-form" class="compact-form"><label class="field"><span>Category</span><select id="complaint-category"><option>Room</option><option>Food</option><option>Water</option><option>Electricity</option><option>Cleaning</option><option>Fees</option><option>Staff</option><option>Other</option></select></label>${field("complaint-subject","Subject","text","Short subject")}<label class="field form-wide"><span>Complaint Details</span><textarea id="complaint-details" placeholder="Write your complaint"></textarea></label><p id="complaint-message" class="form-message form-wide"></p><button class="primary form-wide">Submit Complaint</button></form><div id="complaint-history" class="compact-section"></div></section>`,true);bindStudentBack();try{const rows=await listStudentComplaints(s.studentId);document.querySelector("#complaint-history").innerHTML=`<h3>Complaint History</h3>${rows.map(c=>`<article class="compact-list-row"><div><strong>${esc(c.subject)}</strong><span>${esc(c.category)} · ${esc(c.status)}</span><small>${esc(c.details)}</small></div></article>`).join("")||'<p>No complaints yet.</p>'}`;}catch{}
  document.querySelector("#complaint-form").onsubmit=async e=>{e.preventDefault();const msg=document.querySelector("#complaint-message"),details=document.querySelector("#complaint-details").value.trim();if(!details){msg.textContent="Write complaint details.";msg.className="form-message show error form-wide";return;}try{await submitComplaint({studentId:s.studentId,studentName:s.studentName,instituteCode:s.instituteCode,category:document.querySelector("#complaint-category").value,subject:document.querySelector("#complaint-subject").value,details});msg.textContent="Complaint submitted.";msg.className="form-message show success-message form-wide";}catch(err){msg.textContent=`Could not submit. ${err.code||""}`;msg.className="form-message show error form-wide";}};}
 async function renderStudentMenu(){const s=state.studentSession;if(!s)return renderStudentLogin();const today=new Date().toISOString().slice(0,10);app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page">${studentBack()}<div class="compact-heading"><h2>Today Menu</h2><p>${formatDate(today)}</p></div><div id="today-menu" class="menu-detail-grid"><div class="loading-card"><div class="loader"></div></div></div></section>`,true);bindStudentBack();try{const m=await getDailyMenu(s.instituteCode,today);document.querySelector("#today-menu").innerHTML=m?`<article><span>Breakfast</span><strong>${esc(m.breakfast||"Not updated")}</strong></article><article><span>Lunch</span><strong>${esc(m.lunch||"Not updated")}</strong></article><article><span>Dinner</span><strong>${esc(m.dinner||"Not updated")}</strong></article><article><span>Snacks / Special</span><strong>${esc(m.snacks||"—")}</strong></article>`:'<div class="empty-state compact-empty"><strong>Menu not updated yet.</strong></div>';}catch(err){document.querySelector("#today-menu").innerHTML='<p class="form-message show error">Could not load menu.</p>';}}

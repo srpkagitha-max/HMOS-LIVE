@@ -1,3 +1,13 @@
+# HMOS V4.5.7 — Entry / Exit V2
+
+- Resident: Reason, Where, Leaving Date/Time and Expected Return Date/Time.
+- Single “Share Location + Submit” action requests current GPS and stores coordinates.
+- Admin: Outside and Returned cards are tappable and show resident name lists.
+- Tap a resident to open full movement details.
+- Admin detail includes View Location, Call Resident and Call Parent.
+- Outside resident detail includes Mark Entry; returned records show actual return time.
+- Older movement records without GPS remain readable and are clearly marked as having no shared location.
+
 # HMOS V4.5.6 — Complaint Detail View
 
 - Admin complaint cards are now tappable.
