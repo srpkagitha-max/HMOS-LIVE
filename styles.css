@@ -338,3 +338,6 @@
 .pending-admission-card .transaction-box code{font-size:15px;font-weight:800;overflow-wrap:anywhere;color:#0a3158}
 .pending-admission-card .fee-amounts{grid-template-columns:auto auto;align-content:start}
 @media(max-width:720px){.pending-admission-card .transaction-box{min-width:0;width:100%}.pending-admission-card .credential-actions{width:100%;display:grid;grid-template-columns:1fr}.pending-admission-card .credential-actions button{width:100%}}
+
+/* V4.5.1 payment UX */
+.payment-instructions{display:grid;gap:10px;padding:16px;border:1px solid #d7e2ec;border-radius:16px;background:#fff}.payment-instructions p{margin:0;line-height:1.55;color:#334e68}.payment-instructions strong{color:#17324d}.payment-qr-button{display:block;border:0;padding:0;background:transparent;border-radius:14px;cursor:pointer;touch-action:manipulation}.payment-qr-button:focus-visible{outline:3px solid #0b4f8a;outline-offset:4px}.payment-qr-button .payment-qr-image{transition:transform .15s ease,box-shadow .15s ease}.payment-qr-button:active .payment-qr-image{transform:scale(.985)}

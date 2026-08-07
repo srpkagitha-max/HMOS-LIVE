@@ -1,3 +1,10 @@
+## V4.5.1 - Payment UX
+- Added clear 2-method admission payment instructions.
+- Fixed Copy UPI ID with clipboard fallback.
+- QR code is tappable and opens a UPI payment intent with amount.
+- Removed the separate Open UPI App button.
+- Transaction field renamed to Transaction ID / UTR Number.
+
 # HMOS Production V5.1.0
 
 - Prevents reuse of the same UPI transaction ID.

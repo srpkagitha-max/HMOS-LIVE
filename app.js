@@ -9,10 +9,10 @@ import {
   submitStudentFeePaymentRequest, getInstituteBranding, saveInstituteBranding, saveAdmissionFeeSettings,
   createApprovalRequest, listApprovalRequests, decideApprovalRequest, createNotification, listNotifications, markNotificationRead, createAuditLog, listAuditLogs, softDeleteRecord, listRecycleBin, restoreDeletedRecord, createBackupSnapshot, listBackupSnapshots, findDuplicateAdmissions,
   loginInstituteAdmin, changeInstituteAdminCredentials, checkAdmissionStatus, getSystemHealth, getInstituteLiveMetrics
-} from "./firebase-service.js?v=4.5.0";
+} from "./firebase-service.js?v=4.5.1";
 
 const app = document.querySelector("#app");
-const HMOS_VERSION = "4.5.0";
+const HMOS_VERSION = "4.5.1";
 window.__HMOS_VERSION__ = HMOS_VERSION;
 
 const activeOperations = new Set();
@@ -288,11 +288,48 @@ function readImageAsDataUrl(file,maxBytes=700000){
   });
 }
 function paymentDetails(){const i=state.instituteSession||{},b=state.branding||{};return {payeeName:b.payeeName||i.payeeName||b.instituteName||i.instituteName||"HMOS",upiId:b.upiId||i.upiId||"",paymentContact:b.paymentContact||i.paymentContact||b.contactNumber||i.ownerPhone||"",paymentQrDataUrl:b.paymentQrDataUrl||i.paymentQrDataUrl||""};}
-function paymentBoxHtml(amount=0,showTransaction=true){const p=paymentDetails();return `<div class="form-wide upi-box payment-compatible-box"><h3>UPI Payment</h3><div class="payment-payee"><span>Pay To</span><strong>${esc(p.payeeName)}</strong></div><div class="payment-upi-row"><div class="payment-upi-value"><span>UPI ID</span><strong>${esc(p.upiId||"Not configured")}</strong></div><button id="copy-upi-id" type="button" class="secondary compact-button" ${p.upiId?"":"disabled"}>Copy UPI ID</button></div>${p.paymentContact?`<a class="payment-contact-link" href="tel:${esc(p.paymentContact)}"><span>Payment Contact</span><strong>${esc(p.paymentContact)}</strong></a>`:""}${p.paymentQrDataUrl?`<div class="payment-qr-wrap"><span>Scan QR Code</span><img src="${esc(p.paymentQrDataUrl)}" alt="Payment QR Code" class="payment-qr-image"/></div>`:`<p class="form-help">Payment QR Code is not configured. Use the UPI ID above.</p>`}<div class="payment-action-row"><button id="open-upi-payment" type="button" class="secondary" ${p.upiId?"":"disabled"}>Open UPI App</button></div><p class="form-help">Amount: <strong id="payment-display-amount">₹${Number(amount||0).toLocaleString("en-IN")}</strong>. If the UPI app declines the direct link, pay using the UPI ID or scan the QR code.</p>${showTransaction?field("a-upi-transaction","UPI Transaction ID","text","Enter transaction ID after payment"):""}</div>`;}
+function paymentBoxHtml(amount=0,showTransaction=true){
+  const p=paymentDetails();
+  return `<div class="form-wide upi-box payment-compatible-box">
+    <h3>Payment Instructions</h3>
+    <div class="payment-instructions">
+      <p><strong>మీ Admission Fee ను క్రింద ఉన్న 2 పద్ధతుల్లో ఏదైనా ఒకటి ఉపయోగించి చెల్లించవచ్చు.</strong></p>
+      <p><strong>1. UPI ID ద్వారా చెల్లింపు</strong><br>Copy UPI ID బటన్ నొక్కండి. UPI ID copy అయిన తర్వాత PhonePe / Google Pay / Paytm లేదా మీకు నచ్చిన UPI app open చేసి, UPI ID paste చేసి చూపించిన amount చెల్లించండి.</p>
+      <p><strong>2. QR Code ద్వారా చెల్లింపు</strong><br>QR Code పై tap చేయండి. మీ phoneలో available UPI payment app open అవుతుంది. ఒకవేళ direct payment app open కాకపోతే PhonePe / Google Pay / Paytm ద్వారా QR Code scan చేసి payment complete చేయండి.</p>
+      <p><strong>Payment పూర్తయ్యాక</strong><br>మీ UPI appలో కనిపించే Transaction ID / UTR Number ని copy చేసి కింద ఉన్న Transaction ID fieldలో enter చేయండి. తర్వాత Submit for Admin Approval నొక్కండి.</p>
+    </div>
+    <div class="payment-payee"><span>Pay To</span><strong>${esc(p.payeeName)}</strong></div>
+    <div class="payment-upi-row">
+      <div class="payment-upi-value"><span>UPI ID</span><strong>${esc(p.upiId||"Not configured")}</strong></div>
+      <button id="copy-upi-id" type="button" class="secondary compact-button" ${p.upiId?"":"disabled"}>Copy UPI ID</button>
+    </div>
+    ${p.paymentContact?`<div class="payment-contact-link"><span>Payment Contact</span><strong>${esc(p.paymentContact)}</strong></div>`:""}
+    ${p.paymentQrDataUrl?`<div class="payment-qr-wrap"><span>Tap QR Code to Pay</span><button id="pay-via-qr" type="button" class="payment-qr-button" aria-label="Tap QR Code to Pay"><img src="${esc(p.paymentQrDataUrl)}" alt="Payment QR Code" class="payment-qr-image"/></button><small>QR Code పై tap చేసి UPI appలో payment చేయండి.</small></div>`:`<p class="form-help">Payment QR Code is not configured. Use the UPI ID above.</p>`}
+    <p class="form-help">Amount to Pay: <strong id="payment-display-amount">₹${Number(amount||0).toLocaleString("en-IN")}</strong></p>
+    ${showTransaction?field("a-upi-transaction","UPI Transaction ID / UTR Number","text","Enter Transaction ID after payment"):""}
+  </div>`;
+}
 function bindPaymentActions(getAmount,referenceText="HMOS Payment"){
- const p=paymentDetails(),copy=document.querySelector('#copy-upi-id'),open=document.querySelector('#open-upi-payment');
- if(copy)copy.onclick=async e=>{try{await copyText(p.upiId);e.currentTarget.textContent='Copied';setTimeout(()=>e.currentTarget.textContent='Copy UPI ID',1200);}catch{alert('Could not copy UPI ID.');}};
- if(open)open.onclick=()=>{const amount=Number(getAmount?.()||0);if(!p.upiId||amount<=0)return alert('Set a valid UPI ID and payment amount first.');const params=new URLSearchParams({pa:p.upiId,pn:p.payeeName,am:amount.toFixed(2),cu:'INR',tn:referenceText});location.href=`upi://pay?${params.toString()}`;};
+  const p=paymentDetails();
+  const copy=document.querySelector('#copy-upi-id');
+  const qr=document.querySelector('#pay-via-qr');
+  if(copy) copy.onclick=async e=>{
+    if(!p.upiId) return alert('UPI ID is not configured.');
+    try{
+      await copyText(p.upiId);
+      e.currentTarget.textContent='✓ UPI ID Copied';
+      setTimeout(()=>{if(document.body.contains(e.currentTarget))e.currentTarget.textContent='Copy UPI ID';},1500);
+    }catch{
+      window.prompt('Copy this UPI ID:',p.upiId);
+    }
+  };
+  if(qr) qr.onclick=()=>{
+    const amount=Number(getAmount?.()||0);
+    if(!p.upiId) return alert('UPI ID is not configured.');
+    if(amount<=0) return alert('Please enter a valid payment amount.');
+    const params=new URLSearchParams({pa:p.upiId,pn:p.payeeName||'HMOS',am:amount.toFixed(2),cu:'INR',tn:referenceText});
+    window.location.href=`upi://pay?${params.toString()}`;
+  };
 }
 
 function renderAdmissionFeeSettings(){
@@ -439,18 +476,26 @@ function validateInput(x){return x.instituteName&&x.ownerName&&/^\d{10}$/.test(x
 function bindInstituteForm(existing=null){document.querySelector("#f-type").value=existing?.hostelType||"boys";if(!existing){document.querySelector("#f-password").value=generateTemporaryPassword();document.querySelector("#gen-password").onclick=()=>document.querySelector("#f-password").value=generateTemporaryPassword();document.querySelector("#gen-code").onclick=()=>document.querySelector("#f-code").value=generateInstituteCode(document.querySelector("#f-name").value||"HMOS");}document.querySelector("#institute-form-pro").onsubmit=e=>{e.preventDefault();const x=collectForm(),m=document.querySelector("#form-msg"),b=document.querySelector("#save-institute");if(!validateInput(x)||(!existing&&(!x.instituteCode||!x.temporaryPassword))){m.textContent="Complete required fields and enter a valid 10-digit phone number.";m.className="form-message show error form-wide";return;}if(existing){b.disabled=true;b.textContent="Saving…";m.textContent="Saving institute details securely…";m.className="form-message show info form-wide";updateInstitute(existing.id,x,state.authUser.uid,existing).then(updated=>{state.institutes=state.institutes.map(i=>i.id===existing.id?{...i,...updated}:i);writeCache(state.institutes);closeModal();state.screen="dashboard";renderAdminDashboard("Institute saved successfully.","success-message");}).catch(err=>{console.error("HMOS institute save error:",err);const code=err?.code||"unknown-error";m.textContent=`Could not save institute. Error: ${code}`;m.className="form-message show error form-wide";b.disabled=false;b.innerHTML="Update Institute <span>→</span>";});return;}b.disabled=true;b.textContent="Saving…";createInstitute(x,state.authUser.uid).then(created=>{state.institutes=[created,...state.institutes];state.lastCredentials={instituteId:created.instituteId,instituteCode:created.instituteCode,instituteName:created.instituteName,temporaryPassword:created.temporaryPassword,subscriptionEnd:formatDate(created.subscriptionEnd)};writeCache(state.institutes);state.screen="dashboard";render();notify("Institute created successfully.");}).catch(err=>{console.error("HMOS institute create error:",err);const code=err?.code||"unknown-error";m.textContent=`Could not create institute. Error: ${code}`;m.className="form-message show error form-wide";b.disabled=false;b.innerHTML="Save Institute <span>→</span>";});};}
 
 
-function copyText(value) {
-  if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(value);
-  const area = document.createElement("textarea");
-  area.value = value;
-  area.setAttribute("readonly", "");
-  area.style.position = "fixed";
-  area.style.opacity = "0";
+async function copyText(value) {
+  const text=String(value||"").trim();
+  if(!text) throw new Error("Nothing to copy");
+  if(navigator.clipboard && window.isSecureContext){
+    try{await navigator.clipboard.writeText(text);return true;}catch(err){console.warn("Clipboard API failed, using fallback.",err);}
+  }
+  const area=document.createElement("textarea");
+  area.value=text;
+  area.setAttribute("readonly","");
+  area.style.position="fixed";
+  area.style.left="-9999px";
+  area.style.top="0";
   document.body.appendChild(area);
+  area.focus();
   area.select();
-  document.execCommand("copy");
+  area.setSelectionRange(0,area.value.length);
+  const copied=document.execCommand("copy");
   area.remove();
-  return Promise.resolve();
+  if(!copied) throw new Error("Copy failed");
+  return true;
 }
 function futureDate(value, months) {
   const current = dateOf(value);
