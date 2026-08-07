@@ -1,0 +1,37 @@
+HMOS V4.6.0 — POST-UPLOAD CHECKLIST
+
+1) GitHub Actions deployment must show green.
+2) Hard refresh / reopen the site once so the V4.6.0 service worker is active.
+3) Admin Home:
+   - Pending Admissions count should match pending_payment_verification records.
+   - Open Complaints should count Submitted + In Review.
+   - Dashboard metric cards should open their module.
+4) Beds:
+   - Open Beds once. HMOS reconciles active resident room/bed records.
+   - Tirupatamma should appear on Bed 10 as Occupied if her resident record still has Room 101 / Bed 10.
+5) Student Attendance:
+   - Attendance page should open without page error.
+6) Entry / Exit:
+   - Student fills trip fields, taps Share Location, then Submit Exit.
+   - Admin taps Outside / Returned to view names.
+   - Tap a resident name for details, View Location, Call Resident, Call Parent.
+   - Mark Entry should move the record to Returned with actual return time.
+7) Complaints:
+   - Tap complaint row -> full details.
+   - Change status -> resident history/notification should update.
+8) Fees:
+   - Balance ₹0 -> payment form hidden / disabled and Fully Paid shown.
+   - Admin fee modal shows payment history.
+9) PDF's:
+   - Every report opens a premium preview in a new tab/window.
+   - Tap Print / Save as PDF.
+   - If blocked, allow pop-ups for the GitHub Pages site.
+10) Audit Logs:
+   - New actions should appear for admissions, fee plans/payments, bed allot/vacate,
+     complaints, Entry/Exit, settings and admin credential changes.
+11) Backup Restore:
+   - Older backup data must not overwrite records that are newer in live Firestore.
+
+IMPORTANT:
+Upload/replace ALL files from this ZIP in the repository root, including service-worker.js,
+app.js, firebase-service.js, styles.css, index.html and CHANGELOG.md.
