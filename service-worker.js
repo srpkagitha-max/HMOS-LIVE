@@ -1,4 +1,4 @@
-const CACHE_NAME = "hmos-v5-core-5.0.3-complaint-detail-456-entry-exit-457-outside-tap-458-attendance-459-admin-attendance-4510-pdf-reports-4511";
+const CACHE_NAME = "hmos-v5-core-5.0.3-complaint-detail-456-entry-exit-457-outside-tap-458-attendance-459-admin-attendance-4510-pdf-reports-4511-today-glance-4512";
 const CORE = ["./", "./index.html", "./styles.css", "./app.js", "./firebase-service.js", "./firebase-config.js", "./manifest.json", "./icon-192.png", "./icon-512.png"];
 self.addEventListener("install", event => event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))).then(() => self.clients.claim())));

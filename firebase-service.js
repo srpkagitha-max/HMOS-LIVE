@@ -1155,35 +1155,51 @@ export async function reconcileResidentBedAssignments(instituteCodeValue) {
 export async function getInstituteLiveMetrics(instituteCodeValue) {
   const instituteCode = normalizeCode(instituteCodeValue);
   if (!instituteCode) throw Object.assign(new Error("Institute code missing"), { code: "institute-session-missing" });
-  const today = new Date().toISOString().slice(0, 10);
-  const countQuery = async (name, constraints = []) => {
-    const ref = query(collection(db, name), where("instituteCode", "==", instituteCode), ...constraints);
-    const snap = await getCountFromServer(ref);
-    return Number(snap.data().count || 0);
-  };
-  const [residents, pendingAdmissions, openComplaints, outsideResidents, pendingApprovals, roomsSnap, feesSnap] = await Promise.all([
-    countQuery("students", [where("accountStatus", "==", "active")]),
-    countQuery("pendingAdmissions", [where("status", "==", "pending")]),
-    countQuery("complaints", [where("status", "in", ["open", "in-review"])]).catch(() => countQuery("complaints")),
-    countQuery("movements", [where("status", "==", "outside")]),
-    countQuery("approvalRequests", [where("status", "==", "pending")]),
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+
+  const [studentsSnap, admissionsSnap, complaintsSnap, movementsSnap, approvalsSnap, roomsSnap, feesSnap] = await Promise.all([
+    getDocs(query(collection(db, "students"), where("instituteCode", "==", instituteCode), limit(5000))),
+    getDocs(query(collection(db, "pendingAdmissions"), where("instituteCode", "==", instituteCode), limit(5000))),
+    getDocs(query(collection(db, "complaints"), where("instituteCode", "==", instituteCode), limit(5000))),
+    getDocs(query(collection(db, "movements"), where("instituteCode", "==", instituteCode), limit(5000))),
+    getDocs(query(collection(db, "approvalRequests"), where("instituteCode", "==", instituteCode), limit(5000))),
     getDocs(query(collection(db, "rooms"), where("instituteCode", "==", instituteCode), limit(1000))),
     getDocs(query(collection(db, "fees"), where("instituteCode", "==", instituteCode), limit(5000)))
   ]);
-  let vacantBeds = 0, occupiedBeds = 0, maintenanceBeds = 0;
-  roomsSnap.docs.forEach(d => (d.data().beds || []).forEach(b => {
-    const status = b.isVisible === false ? "hidden" : (b.status || "vacant");
-    if (status === "vacant") vacantBeds += 1;
-    else if (status === "occupied") occupiedBeds += 1;
-    else if (status === "maintenance") maintenanceBeds += 1;
+
+  const residents = studentsSnap.docs.map(d=>d.data()).filter(x=>!x.isDeleted&&(x.accountStatus||"active")==="active").length;
+  const pendingAdmissions = admissionsSnap.docs.map(d=>d.data()).filter(x=>!x.isDeleted&&String(x.status||"").toLowerCase()==="pending").length;
+
+  const openComplaints = complaintsSnap.docs.map(d=>d.data()).filter(x=>{
+    if(x.isDeleted)return false;
+    const status=String(x.status||"submitted").toLowerCase();
+    return !["resolved","rejected","closed","deleted"].includes(status);
+  }).length;
+
+  const outsideResidents = movementsSnap.docs.map(d=>d.data()).filter(x=>!x.isDeleted&&String(x.status||"").toLowerCase()==="outside").length;
+  const pendingApprovals = approvalsSnap.docs.map(d=>d.data()).filter(x=>!x.isDeleted&&x.status==="pending"&&x.requestType!=="exit_request").length;
+
+  let vacantBeds=0,occupiedBeds=0,maintenanceBeds=0,reservedBeds=0;
+  roomsSnap.docs.forEach(d=>(d.data().beds||[]).forEach(b=>{
+    const status=b.isVisible===false?"hidden":String(b.status||"vacant").toLowerCase();
+    if(status==="vacant")vacantBeds++;
+    else if(status==="occupied")occupiedBeds++;
+    else if(status==="maintenance")maintenanceBeds++;
+    else if(status==="reserved")reservedBeds++;
   }));
-  let feeDueToday = 0, pendingFees = 0, outstandingAmount = 0;
-  feesSnap.docs.forEach(d => {
-    const f = d.data(); const balance = Number(f.balanceAmount || 0);
-    if (balance > 0) { pendingFees += 1; outstandingAmount += balance; }
-    if (balance > 0 && String(f.dueDate || "") === today) feeDueToday += 1;
+
+  let feeDueToday=0,pendingFees=0,outstandingAmount=0;
+  feesSnap.docs.forEach(d=>{
+    const f=d.data();if(f.isDeleted)return;
+    const balance=Math.max(0,Number(f.balanceAmount||0));
+    if(balance>0){
+      pendingFees++;outstandingAmount+=balance;
+      if(String(f.dueDate||"")===today)feeDueToday++;
+    }
   });
-  return { residents, pendingAdmissions, openComplaints, outsideResidents, pendingApprovals, vacantBeds, occupiedBeds, maintenanceBeds, feeDueToday, pendingFees, outstandingAmount, updatedAt: new Date().toISOString() };
+
+  return {residents,pendingAdmissions,openComplaints,outsideResidents,pendingApprovals,vacantBeds,occupiedBeds,maintenanceBeds,reservedBeds,feeDueToday,pendingFees,outstandingAmount,updatedAt:new Date().toISOString()};
 }
 export async function getSystemHealth() {
   const startedAt = performance.now();

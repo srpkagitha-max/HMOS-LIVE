@@ -9,10 +9,10 @@ import {
   submitStudentFeePaymentRequest, getInstituteBranding, saveInstituteBranding, saveAdmissionFeeSettings,
   createApprovalRequest, listApprovalRequests, decideApprovalRequest, createNotification, listNotifications, markNotificationRead, createAuditLog, listAuditLogs, softDeleteRecord, listRecycleBin, restoreDeletedRecord, createBackupSnapshot, listBackupSnapshots, exportInstituteBackup, restoreInstituteBackup, findDuplicateAdmissions,
   loginInstituteAdmin, changeInstituteAdminCredentials, checkAdmissionStatus, getSystemHealth, getInstituteLiveMetrics, reconcileResidentBedAssignments
-} from "./firebase-service.js?v=4.5.11";
+} from "./firebase-service.js?v=4.5.12";
 
 const app = document.querySelector("#app");
-const HMOS_VERSION = "4.5.11";
+const HMOS_VERSION = "4.5.12";
 window.__HMOS_VERSION__ = HMOS_VERSION;
 
 const activeOperations = new Set();
@@ -202,14 +202,14 @@ function renderInstituteAdminHome(){
   app.innerHTML=shell(`<section class="card portal-card wide-card compact-admin-home">
     <div class="compact-admin-top"><button id="admin-home-back" class="back" type="button">← Institute Portal</button><div><span class="step success-step">Admin Dashboard</span><h2>Institute Home</h2><p>${esc(i.instituteName)} · ${esc(i.instituteCode)}</p></div></div>
     <section class="live-ops-panel" aria-live="polite">
-      <div class="live-ops-head"><div><span class="step">Live operations</span><h3>Today at a Glance</h3></div><button id="live-metrics-refresh" class="secondary compact-button" type="button">Refresh</button></div>
-      <div id="live-metrics-grid" class="live-metrics-grid">
-        <article><span>Residents</span><strong>—</strong><small>Active</small></article>
-        <article><span>Pending Admissions</span><strong>—</strong><small>Needs review</small></article>
-        <article><span>Outside</span><strong>—</strong><small>Not returned</small></article>
-        <article><span>Vacant Beds</span><strong>—</strong><small>Ready to allot</small></article>
-        <article><span>Fee Due Today</span><strong>—</strong><small>Accounts</small></article>
-        <article><span>Open Complaints</span><strong>—</strong><small>Needs action</small></article>
+      <div class="live-ops-head"><div><span class="step">Live operations</span><h3>Today at a Glance</h3><p>Tap any card to open its live details.</p></div><button id="live-metrics-refresh" class="secondary compact-button" type="button">Refresh</button></div>
+      <div id="live-metrics-grid" class="live-metrics-grid tappable-live-metrics">
+        <button type="button" data-live-target="institute-admin"><span>Residents</span><strong>—</strong><small>Active · Tap to view</small></button>
+        <button type="button" data-live-target="pending-admissions"><span>Pending Admissions</span><strong>—</strong><small>Needs review · Tap to view</small></button>
+        <button type="button" data-live-target="entry-exit"><span>Outside</span><strong>—</strong><small>Not returned · Tap to view</small></button>
+        <button type="button" data-live-target="room-management"><span>Vacant Beds</span><strong>—</strong><small>Ready to allot · Tap to view</small></button>
+        <button type="button" data-live-target="fees-management"><span>Fee Due Today</span><strong>—</strong><small>Accounts · Tap to view</small></button>
+        <button type="button" data-live-target="complaints-admin"><span>Open Complaints</span><strong>—</strong><small>Needs action · Tap to view</small></button>
       </div>
       <p id="live-metrics-note" class="live-metrics-note">Loading live data…</p>
     </section>
@@ -231,36 +231,48 @@ function renderInstituteAdminHome(){
       <button id="pdf-card" class="admin-home-action"><strong>PDF's</strong><small>Reports & lists</small></button>
     </div>
   </section>`,true);
-  document.querySelector("#admin-home-back").onclick=()=>{state.screen="institute-portal";render();};
-  document.querySelector("#residents-card").onclick=()=>{state.screen="institute-admin";render();};
-  document.querySelector("#admissions-card").onclick=()=>{state.screen="admissions-home";render();};
-  document.querySelector("#beds-card").onclick=()=>{state.screen="room-management";render();};
-  document.querySelector("#kitchen-card").onclick=()=>{state.screen="kitchen";render();};
-  document.querySelector("#fees-card").onclick=()=>{state.screen="fees-management";render();};
-  document.querySelector("#entry-exit-card").onclick=()=>{state.screen="entry-exit";render();};
-  document.querySelector("#complaints-admin-card").onclick=()=>{state.screen="complaints-admin";render();};
-  document.querySelector("#approvals-card").onclick=()=>{state.screen="approvals";render();};
-  document.querySelector("#notifications-card").onclick=()=>{state.screen="admin-notifications";render();};
-  document.querySelector("#audit-card").onclick=()=>{state.screen="audit-logs";render();};
-  document.querySelector("#recycle-card").onclick=()=>{state.screen="recycle-bin";render();};
-  document.querySelector("#backup-card").onclick=()=>{state.screen="backup-restore";render();};
-  document.querySelector("#system-health-card").onclick=()=>{state.screen="system-health";render();};
+
+  const go=screen=>{state.screen=screen;render();};
+  document.querySelector("#admin-home-back").onclick=()=>go("institute-portal");
+  document.querySelector("#residents-card").onclick=()=>go("institute-admin");
+  document.querySelector("#admissions-card").onclick=()=>go("admissions-home");
+  document.querySelector("#beds-card").onclick=()=>go("room-management");
+  document.querySelector("#kitchen-card").onclick=()=>go("kitchen");
+  document.querySelector("#fees-card").onclick=()=>go("fees-management");
+  document.querySelector("#entry-exit-card").onclick=()=>go("entry-exit");
+  document.querySelector("#complaints-admin-card").onclick=()=>go("complaints-admin");
+  document.querySelector("#approvals-card").onclick=()=>go("approvals");
+  document.querySelector("#notifications-card").onclick=()=>go("admin-notifications");
+  document.querySelector("#audit-card").onclick=()=>go("audit-logs");
+  document.querySelector("#recycle-card").onclick=()=>go("recycle-bin");
+  document.querySelector("#backup-card").onclick=()=>go("backup-restore");
+  document.querySelector("#system-health-card").onclick=()=>go("system-health");
+  document.querySelector("#settings-card").onclick=()=>go("settings");
+  document.querySelector("#pdf-card").onclick=()=>go("pdf-reports");
+  document.querySelectorAll("[data-live-target]").forEach(card=>card.onclick=()=>go(card.dataset.liveTarget));
+
   const paintLiveMetrics = async () => {
-    const grid=document.querySelector("#live-metrics-grid"), note=document.querySelector("#live-metrics-note"), btn=document.querySelector("#live-metrics-refresh");
-    if(!grid) return; if(btn){btn.disabled=true;btn.textContent="Refreshing…";}
+    const grid=document.querySelector("#live-metrics-grid"),note=document.querySelector("#live-metrics-note"),btn=document.querySelector("#live-metrics-refresh");
+    if(!grid)return;
+    if(btn){btn.disabled=true;btn.textContent="Refreshing…";}
+    grid.classList.add("is-loading");
     try{
       const m=await getInstituteLiveMetrics(i.instituteCode);
       const values=[m.residents,m.pendingAdmissions,m.outsideResidents,m.vacantBeds,m.feeDueToday,m.openComplaints];
-      grid.querySelectorAll("article strong").forEach((el,index)=>el.textContent=String(values[index]??0));
+      grid.querySelectorAll("button strong").forEach((el,index)=>el.textContent=String(values[index]??0));
       note.textContent=`Outstanding fees: ₹${Number(m.outstandingAmount||0).toLocaleString("en-IN")} · ${m.pendingApprovals||0} pending approvals · Updated just now`;
-    }catch(err){note.textContent=`Live summary unavailable. ${humanError(err,"Tap Refresh to try again.")}`;}
-    finally{if(btn){btn.disabled=false;btn.textContent="Refresh";}}
+      note.classList.remove("metric-error");
+    }catch(err){
+      note.textContent=`Live summary unavailable. ${humanError(err,"Tap Refresh to try again.")}`;
+      note.classList.add("metric-error");
+    }finally{
+      grid.classList.remove("is-loading");
+      if(btn){btn.disabled=false;btn.textContent="Refresh";}
+    }
   };
   document.querySelector("#live-metrics-refresh").onclick=paintLiveMetrics;
   paintLiveMetrics();
   refreshAdminBadges();
-  document.querySelector("#settings-card").onclick=()=>{state.screen="settings";render();};
-  document.querySelector("#pdf-card").onclick=()=>{state.screen="pdf-reports";render();};
 }
 
 function renderSettingsHome(){

@@ -496,3 +496,15 @@ html,body{max-width:100%;overflow-x:hidden}
 .attendance-resident-row>div{min-width:0;display:flex;flex-direction:column;gap:3px}.attendance-resident-row span,.attendance-resident-row small{color:#718391}
 .attendance-status{flex:0 0 auto;padding:7px 10px;border-radius:999px;font-size:.78rem;font-weight:800}
 .attendance-status.present{background:#e7f7ef;color:#18764d}.attendance-status.outside{background:#fff0df;color:#9b5a0a}.attendance-status.missing{background:#eef2f6;color:#657584}
+
+
+/* V4.5.12 Today at a Glance */
+.live-ops-head p{margin:5px 0 0;color:#718391;font-size:.9rem}
+.tappable-live-metrics button{appearance:none;-webkit-appearance:none;width:100%;border:1px solid #d7e2e9;background:#fff;border-radius:20px;padding:18px;text-align:left;font:inherit;color:inherit;display:flex;flex-direction:column;gap:5px;cursor:pointer;transition:transform .12s ease,border-color .12s ease,box-shadow .12s ease}
+.tappable-live-metrics button:active{transform:scale(.985)}
+.tappable-live-metrics button:focus-visible{outline:3px solid rgba(19,101,159,.22);outline-offset:2px}
+.tappable-live-metrics button span{color:#6c7c89;font-weight:700}
+.tappable-live-metrics button strong{font-size:2rem;color:#102d4d}
+.tappable-live-metrics button small{color:#748492}
+.tappable-live-metrics.is-loading button{opacity:.72}
+.live-metrics-note.metric-error{color:#b03434}

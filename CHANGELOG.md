@@ -1,3 +1,16 @@
+# HMOS V4.5.12 — Today at a Glance Complete
+
+- All six Today at a Glance cards are now tappable.
+- Residents opens resident management.
+- Pending Admissions opens the pending admission queue directly.
+- Outside opens Entry / Exit.
+- Vacant Beds opens Room Management.
+- Fee Due Today opens Fees.
+- Open Complaints opens Complaints.
+- Submitted / open / in-review complaints count as open until resolved or rejected.
+- Pending approval count excludes legacy exit-request approvals so it matches the Approvals page.
+- Refresh reloads all live values without leaving the dashboard.
+
 # HMOS V4.5.11 — PDF Reports Repair
 
 - Fixes the PDF module crash caused by the missing prepareInstitutePrint function.

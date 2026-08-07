@@ -1,0 +1,12 @@
+HMOS V4.5.12 TODAY AT A GLANCE TEST
+
+1. Admin -> Institute Home.
+2. Confirm Today at a Glance shows live numbers.
+3. Tap Residents -> Residents page must open.
+4. Tap Pending Admissions -> Pending Admissions page must open.
+5. Tap Outside -> Entry / Exit must open.
+6. Tap Vacant Beds -> Room Management must open.
+7. Tap Fee Due Today -> Fees must open.
+8. Tap Open Complaints -> Complaints must open.
+9. Return to dashboard and tap Refresh; numbers must reload.
+10. Submitted or In Review complaints must count as Open Complaints until resolved/rejected.
