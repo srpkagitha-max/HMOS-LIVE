@@ -731,29 +731,7 @@ export async function createRoom(input, instituteSession) {
   return { ...payload, createdAt: new Date(), updatedAt: new Date() };
 }
 
-export async function allotStudentBed({studentIdValue,roomIdValue,bedNumberValue,instituteCodeValue}){
-  const studentId=normalizeCode(studentIdValue),roomId=cleanText(roomIdValue),bedNumber=cleanText(bedNumberValue),instituteCode=normalizeCode(instituteCodeValue);
-  if(!studentId||!roomId||!bedNumber||!instituteCode)throw Object.assign(new Error("Allotment details missing"),{code:"allotment-details-missing"});
-  const result=await withTimeout(runTransaction(db,async tx=>{
-    const studentRef=doc(db,"students",studentId),roomRef=doc(db,"rooms",roomId);
-    const [studentSnap,roomSnap]=await Promise.all([tx.get(studentRef),tx.get(roomRef)]);
-    if(!studentSnap.exists()||normalizeCode(studentSnap.data().instituteCode)!==instituteCode)throw Object.assign(new Error("Student not found"),{code:"student-not-found"});
-    if(!roomSnap.exists()||normalizeCode(roomSnap.data().instituteCode)!==instituteCode)throw Object.assign(new Error("Room not found"),{code:"room-not-found"});
-    const room=roomSnap.data(),beds=Array.isArray(room.beds)?room.beds.map(b=>({...b})):[];
-    const target=beds.find(b=>String(b.bedNumber)===bedNumber);
-    if(!target)throw Object.assign(new Error("Bed not found"),{code:"bed-not-found"});
-    if(target.status!=="vacant"||target.isVisible===false)throw Object.assign(new Error("Bed unavailable"),{code:"bed-unavailable"});
-    if(studentSnap.data().roomId&&studentSnap.data().roomId!==roomId)throw Object.assign(new Error("Vacate current bed before transfer"),{code:"existing-bed-allotment"});
-    target.status="occupied";target.studentId=studentId;target.studentName=cleanText(studentSnap.data().studentName);delete target.pendingAdmissionId;
-    const occupiedBeds=beds.filter(b=>b.status==="occupied").length;
-    tx.update(roomRef,{beds,occupiedBeds,updatedAt:serverTimestamp()});
-    tx.update(studentRef,{roomId,roomNumber:room.roomNumber,building:room.building,floor:room.floor,bedNumber,roomStatus:"allotted",updatedAt:serverTimestamp()});
-    tx.set(doc(db,"roomAllotments",studentId),{studentId,instituteCode,roomId,roomNumber:room.roomNumber,bedNumber,status:"active",updatedAt:serverTimestamp()},{merge:true});
-    return {roomId,roomNumber:room.roomNumber,bedNumber};
-  }),15000,"bed-allotment-timeout");
-  await createAuditLog({instituteCode,actorType:"admin",action:"bed_allotted",entityType:"roomAllotment",entityId:studentId,summary:`${studentId} allotted Room ${result.roomNumber}, Bed ${result.bedNumber}`,newValue:result});
-  return result;
-}) {
+export async function allotStudentBed({ studentIdValue, roomIdValue, bedNumberValue, instituteCodeValue }) {
   const studentId = normalizeCode(studentIdValue);
   const roomId = cleanText(roomIdValue);
   const bedNumber = cleanText(bedNumberValue);
@@ -796,19 +774,23 @@ export async function setBedDisplayStatus({ roomIdValue, bedNumberValue, action,
   return {roomId,bedNumber,status:action};
 }
 
-export async function vacateStudentBed(studentIdValue,instituteCodeValue){
-  const studentId=normalizeCode(studentIdValue),instituteCode=normalizeCode(instituteCodeValue);
-  const studentRef=doc(db,"students",studentId),studentSnap=await withTimeout(getDoc(studentRef),9000,"student-read-timeout");
-  if(!studentSnap.exists()||normalizeCode(studentSnap.data().instituteCode)!==instituteCode)throw Object.assign(new Error("Student not found"),{code:"student-not-found"});
-  const s=studentSnap.data(),oldRoom={roomId:s.roomId||"",roomNumber:s.roomNumber||"",bedNumber:s.bedNumber||""},batch=writeBatch(db);
+export async function vacateStudentBed(studentIdValue, instituteCodeValue) {
+  const studentId=normalizeCode(studentIdValue), instituteCode=normalizeCode(instituteCodeValue);
+  const studentRef=doc(db,"students",studentId);
+  const studentSnap=await withTimeout(getDoc(studentRef),9000,"student-read-timeout");
+  if(!studentSnap.exists()||normalizeCode(studentSnap.data().instituteCode)!==instituteCode) throw Object.assign(new Error("Student not found"),{code:"student-not-found"});
+  const s=studentSnap.data();
+  const batch=writeBatch(db);
   if(s.roomId){
-    const roomRef=doc(db,"rooms",s.roomId),roomSnap=await withTimeout(getDoc(roomRef),9000,"room-read-timeout");
-    if(roomSnap.exists()){const beds=(roomSnap.data().beds||[]).map(b=>normalizeCode(b.studentId)===studentId?{...b,status:"vacant",studentId:"",studentName:""}:b);batch.update(roomRef,{beds,occupiedBeds:beds.filter(b=>b.status==="occupied").length,updatedAt:serverTimestamp()});}
+    const roomRef=doc(db,"rooms",s.roomId), roomSnap=await withTimeout(getDoc(roomRef),9000,"room-read-timeout");
+    if(roomSnap.exists()){
+      const beds=(roomSnap.data().beds||[]).map(b=>b.studentId===studentId?{...b,status:"vacant",studentId:"",studentName:""}:b);
+      batch.update(roomRef,{beds,occupiedBeds:beds.filter(b=>b.status==="occupied").length,updatedAt:serverTimestamp()});
+    }
   }
   batch.update(studentRef,{roomId:"",roomNumber:"",building:"",floor:"",bedNumber:"",roomStatus:"not-allotted",updatedAt:serverTimestamp()});
   batch.set(doc(db,"roomAllotments",studentId),{studentId,instituteCode,status:"vacated",updatedAt:serverTimestamp()},{merge:true});
   await withTimeout(batch.commit(),12000,"bed-vacate-timeout");
-  await createAuditLog({instituteCode,actorType:"admin",action:"bed_vacated",entityType:"roomAllotment",entityId:studentId,summary:`${studentId} vacated Room ${oldRoom.roomNumber}, Bed ${oldRoom.bedNumber}`,oldValue:oldRoom});
   return true;
 }
 
@@ -822,15 +804,6 @@ export async function listInstituteFees(instituteCodeValue){
 }
 export async function saveStudentFeePlan({studentId,instituteCode,totalFee,dueDate}){
   studentId=normalizeCode(studentId);instituteCode=normalizeCode(instituteCode);totalFee=Number(totalFee||0);
-  if(!studentId||!instituteCode||totalFee<0)throw Object.assign(new Error("Invalid fee plan"),{code:"invalid-fee-plan"});
-  const ref=doc(db,"fees",studentId),snap=await withTimeout(getDoc(ref),9000,"fee-read-timeout");
-  const paid=Number(snap.exists()?snap.data().paidAmount||0:0),balance=Math.max(0,totalFee-paid);
-  await withTimeout(setDoc(ref,{studentId,instituteCode,totalFee,paidAmount:paid,balanceAmount:balance,dueDate:cleanText(dueDate),status:balance>0?"due":"paid",updatedAt:serverTimestamp(),...(snap.exists()?{}:{createdAt:serverTimestamp()})},{merge:true}),12000,"fee-save-timeout");
-  await withTimeout(updateDoc(doc(db,"students",studentId),{feeTotal:totalFee,feePaid:paid,feeBalance:balance,feesStatus:balance>0?"due":"paid",updatedAt:serverTimestamp()}),12000,"student-fee-sync-timeout");
-  await createAuditLog({instituteCode,actorType:"admin",action:"fee_plan_saved",entityType:"fee",entityId:studentId,summary:`Fee plan saved for ${studentId}`,newValue:{totalFee,dueDate:cleanText(dueDate),balance}});
-  return {studentId,totalFee,paidAmount:paid,balanceAmount:balance};
-}){
-  studentId=normalizeCode(studentId);instituteCode=normalizeCode(instituteCode);totalFee=Number(totalFee||0);
   if(!studentId||!instituteCode||totalFee<0) throw Object.assign(new Error("Invalid fee plan"),{code:"invalid-fee-plan"});
   const ref=doc(db,"fees",studentId), snap=await withTimeout(getDoc(ref),9000,"fee-read-timeout");
   const paid=Number(snap.exists()?snap.data().paidAmount||0:0), balance=Math.max(0,totalFee-paid);
@@ -839,32 +812,6 @@ export async function saveStudentFeePlan({studentId,instituteCode,totalFee,dueDa
   return {studentId,totalFee,paidAmount:paid,balanceAmount:balance};
 }
 export async function recordStudentFeePayment({studentId,instituteCode,amount,mode,reference}){
-  studentId=normalizeCode(studentId);instituteCode=normalizeCode(instituteCode);amount=Number(amount||0);
-  if(!studentId||!instituteCode||amount<=0)throw Object.assign(new Error("Invalid payment"),{code:"invalid-payment"});
-  const referenceKey=cleanText(reference).toUpperCase();
-  if(referenceKey){
-    const duplicate=await getDocs(query(collection(db,"payments"),where("instituteCode","==",instituteCode),where("referenceKey","==",referenceKey),limit(1)));
-    if(!duplicate.empty)throw Object.assign(new Error("Duplicate payment reference"),{code:"duplicate-payment-reference"});
-  }
-  const paymentRef=doc(collection(db,"payments"));
-  const receiptNo=`R${new Date().toISOString().slice(0,10).replaceAll("-","")}-${paymentRef.id.slice(0,6).toUpperCase()}`;
-  const result=await withTimeout(runTransaction(db,async tx=>{
-    const feeRef=doc(db,"fees",studentId),studentRef=doc(db,"students",studentId);
-    const [feeSnap,studentSnap]=await Promise.all([tx.get(feeRef),tx.get(studentRef)]);
-    if(!feeSnap.exists())throw Object.assign(new Error("Set fee plan first"),{code:"fee-plan-missing"});
-    if(!studentSnap.exists()||normalizeCode(studentSnap.data().instituteCode)!==instituteCode)throw Object.assign(new Error("Student not found"),{code:"student-not-found"});
-    const fee=feeSnap.data(),oldBalance=Number(fee.balanceAmount||0);
-    if(oldBalance<=0)throw Object.assign(new Error("No outstanding balance"),{code:"no-outstanding-balance"});
-    if(amount>oldBalance)throw Object.assign(new Error("Payment exceeds balance"),{code:"payment-exceeds-balance"});
-    const paidAmount=Number(fee.paidAmount||0)+amount,balanceAmount=Math.max(0,Number(fee.totalFee||0)-paidAmount);
-    tx.update(feeRef,{paidAmount,balanceAmount,status:balanceAmount>0?"due":"paid",updatedAt:serverTimestamp()});
-    tx.set(paymentRef,{paymentId:paymentRef.id,receiptNo,studentId,instituteCode,amount,mode:cleanText(mode)||"Cash",reference:cleanText(reference),referenceKey,paidAt:serverTimestamp(),createdAt:serverTimestamp(),status:"approved"});
-    tx.update(studentRef,{feePaid:paidAmount,feeBalance:balanceAmount,feesStatus:balanceAmount>0?"due":"paid",updatedAt:serverTimestamp()});
-    return {paymentId:paymentRef.id,receiptNo,amount,mode:cleanText(mode)||"Cash",balanceAmount};
-  }),15000,"payment-save-timeout");
-  await createAuditLog({instituteCode,actorType:"admin",action:"fee_payment_recorded",entityType:"payment",entityId:result.paymentId,summary:`Payment ${result.receiptNo} recorded`,newValue:{studentId,amount,balanceAmount:result.balanceAmount,mode:result.mode}});
-  return result;
-}){
   studentId=normalizeCode(studentId);instituteCode=normalizeCode(instituteCode);amount=Number(amount||0);
   if(!studentId||!instituteCode||amount<=0) throw Object.assign(new Error("Invalid payment"),{code:"invalid-payment"});
   const referenceKey=cleanText(reference).toUpperCase();
@@ -958,14 +905,13 @@ export async function approvePendingAdmission(applicationId,instituteSession){
   batch.set(doc(db,"fees",studentId),{studentId,instituteCode:a.instituteCode,totalFee:a.totalFees,paidAmount:a.amountPayingNow,balanceAmount:a.balanceAmount,status:a.balanceAmount>0?"due":"paid",createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
   batch.set(paymentRef,{paymentId:paymentRef.id,receiptNo,studentId,instituteCode:a.instituteCode,amount:a.amountPayingNow,mode:"UPI",reference:a.upiTransactionId,paidAt:serverTimestamp(),createdAt:serverTimestamp()});
   const studentNoteRef=doc(collection(db,"notifications"));
-  batch.set(studentNoteRef,{id:studentNoteRef.id,instituteCode:a.instituteCode,recipientType:"resident",recipientId:studentId,title:"Admission approved",message:`Your admission is approved. Student ID: ${studentId}. Receipt: ${receiptNo}.`,isRead:false,createdAt:serverTimestamp()});
+  batch.set(studentNoteRef,{id:studentNoteRef.id,instituteCode:a.instituteCode,recipientType:"student",recipientId:studentId,title:"Admission approved",message:`Your admission is approved. Student ID: ${studentId}. Receipt: ${receiptNo}.`,isRead:false,createdAt:serverTimestamp()});
   const adminNoteRef=doc(collection(db,"notifications"));
   batch.set(adminNoteRef,{id:adminNoteRef.id,instituteCode:a.instituteCode,recipientType:"admin",title:"Resident created",message:`${a.studentName} was approved and allotted Room ${a.roomNumber}, Bed ${a.bedNumber}.`,isRead:false,createdAt:serverTimestamp()});
   batch.update(roomRef,{beds,occupiedBeds:beds.filter(b=>b.status==="occupied").length,updatedAt:serverTimestamp()});
   batch.update(ref,{status:"approved",studentId,temporaryPassword:password,receiptNo,approvedAt:serverTimestamp(),updatedAt:serverTimestamp()});
   batch.update(doc(db,"institutes",a.instituteId),{currentStudents:Number(instituteSession.currentStudents||0)+1,updatedAt:serverTimestamp()});
   await withTimeout(batch.commit(),15000,"approval-timeout");
-  await createAuditLog({instituteCode:a.instituteCode,actorType:"admin",action:"admission_approved",entityType:"admission",entityId:applicationId,summary:`${a.studentName} approved and allotted Room ${a.roomNumber}, Bed ${a.bedNumber}`,newValue:{studentId,roomId:a.roomId,roomNumber:a.roomNumber,bedNumber:a.bedNumber}});
   return {...common,temporaryPassword:password,receiptNo};
 }
 
@@ -993,14 +939,14 @@ export async function getDailyMenu(instituteCodeValue,dateValue){const institute
 export async function submitMealAttendance(input){const studentId=normalizeCode(input.studentId),instituteCode=normalizeCode(input.instituteCode),meal=cleanText(input.meal).toLowerCase(),date=todayKey(input.date);if(!studentId||!instituteCode||!["breakfast","lunch","dinner","night"].includes(meal))throw Object.assign(new Error("Invalid attendance"),{code:"invalid-attendance"});const id=`${studentId}-${date}-${meal}`;const ref=doc(db,"mealAttendance",id);if((await getDoc(ref)).exists())return true;await setDoc(ref,{id,studentId,studentName:cleanText(input.studentName),instituteCode,date,meal,status:"present",createdAt:serverTimestamp()});return true;}
 export async function getStudentMealAttendance(studentIdValue,dateValue,mealValue){const id=`${normalizeCode(studentIdValue)}-${todayKey(dateValue)}-${cleanText(mealValue).toLowerCase()}`;const snap=await getDoc(doc(db,"mealAttendance",id));return snap.exists()?{id:snap.id,...snap.data()}:null;}
 export async function listInstituteMealAttendance(instituteCodeValue,dateValue){const code=normalizeCode(instituteCodeValue),date=todayKey(dateValue),q=query(collection(db,"mealAttendance"),where("instituteCode","==",code),limit(1000)),snap=await getDocs(q);return snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.date===date);}
-export async function submitMovementRequest(input){const studentId=normalizeCode(input.studentId),instituteCode=normalizeCode(input.instituteCode),latitude=Number(input.latitude),longitude=Number(input.longitude);if(!studentId||!instituteCode||!cleanText(input.reason)||!cleanText(input.location)||!Number.isFinite(latitude)||!Number.isFinite(longitude))throw Object.assign(new Error("Invalid movement or location"),{code:"invalid-movement"});const ref=doc(collection(db,"movements"));const data={id:ref.id,studentId,studentName:cleanText(input.studentName),instituteCode,reason:cleanText(input.reason),location:cleanText(input.location),leavingDate:cleanText(input.leavingDate),leavingTime:cleanText(input.leavingTime),returnDate:cleanText(input.returnDate),returnTime:cleanText(input.returnTime),latitude,longitude,locationAccuracy:Number(input.locationAccuracy||0),locationSharedAt:serverTimestamp(),status:"outside",createdAt:serverTimestamp(),updatedAt:serverTimestamp()};await setDoc(ref,data);await createAuditLog({instituteCode,actorType:"resident",actorId:studentId,action:"exit_submitted",entityType:"movement",entityId:ref.id,summary:`${data.studentName||studentId} submitted exit to ${data.location}`,newValue:{reason:data.reason,location:data.location,returnDate:data.returnDate,returnTime:data.returnTime}});return data;}
-export async function markStudentEntry(movementId){const ref=doc(db,"movements",cleanText(movementId)),snap=await getDoc(ref);if(!snap.exists())throw Object.assign(new Error("Movement not found"),{code:"movement-not-found"});const m=snap.data();await updateDoc(ref,{status:"returned",actualReturnAt:serverTimestamp(),updatedAt:serverTimestamp()});await createAuditLog({instituteCode:m.instituteCode,actorType:"admin",action:"entry_marked",entityType:"movement",entityId:cleanText(movementId),summary:`${m.studentName||m.studentId} marked returned`});return true;}
+export async function submitMovementRequest(input){const studentId=normalizeCode(input.studentId),instituteCode=normalizeCode(input.instituteCode);if(!studentId||!instituteCode||!cleanText(input.reason)||!cleanText(input.location))throw Object.assign(new Error("Invalid movement"),{code:"invalid-movement"});const ref=doc(collection(db,"movements"));const data={id:ref.id,studentId,studentName:cleanText(input.studentName),instituteCode,reason:cleanText(input.reason),location:cleanText(input.location),leavingDate:cleanText(input.leavingDate),leavingTime:cleanText(input.leavingTime),returnDate:cleanText(input.returnDate),returnTime:cleanText(input.returnTime),status:"outside",createdAt:serverTimestamp(),updatedAt:serverTimestamp()};await setDoc(ref,data);return data;}
+export async function markStudentEntry(movementId){await updateDoc(doc(db,"movements",cleanText(movementId)),{status:"returned",actualReturnAt:serverTimestamp(),updatedAt:serverTimestamp()});return true;}
 export async function listInstituteMovements(instituteCodeValue){const code=normalizeCode(instituteCodeValue),q=query(collection(db,"movements"),where("instituteCode","==",code),limit(500)),snap=await getDocs(q);return snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));}
 export async function getStudentMovements(studentIdValue){const id=normalizeCode(studentIdValue),q=query(collection(db,"movements"),where("studentId","==",id),limit(250)),snap=await getDocs(q);return snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));}
-export async function submitComplaint(input){const studentId=normalizeCode(input.studentId),instituteCode=normalizeCode(input.instituteCode);if(!studentId||!instituteCode||!cleanText(input.details))throw Object.assign(new Error("Invalid complaint"),{code:"invalid-complaint"});const ref=doc(collection(db,"complaints"));const data={id:ref.id,studentId,studentName:cleanText(input.studentName),instituteCode,category:cleanText(input.category)||"Other",subject:cleanText(input.subject)||"Complaint",details:cleanText(input.details),status:"submitted",createdAt:serverTimestamp(),updatedAt:serverTimestamp()};await setDoc(ref,data);await createAuditLog({instituteCode,actorType:"resident",actorId:studentId,action:"complaint_submitted",entityType:"complaint",entityId:ref.id,summary:data.subject});return data;}
+export async function submitComplaint(input){const studentId=normalizeCode(input.studentId),instituteCode=normalizeCode(input.instituteCode);if(!studentId||!instituteCode||!cleanText(input.details))throw Object.assign(new Error("Invalid complaint"),{code:"invalid-complaint"});const ref=doc(collection(db,"complaints"));const data={id:ref.id,studentId,studentName:cleanText(input.studentName),instituteCode,category:cleanText(input.category)||"Other",subject:cleanText(input.subject)||"Complaint",details:cleanText(input.details),status:"submitted",createdAt:serverTimestamp(),updatedAt:serverTimestamp()};await setDoc(ref,data);return data;}
 export async function listStudentComplaints(studentIdValue){const id=normalizeCode(studentIdValue),q=query(collection(db,"complaints"),where("studentId","==",id),limit(250)),snap=await getDocs(q);return snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));}
 export async function listInstituteComplaints(instituteCodeValue){const code=normalizeCode(instituteCodeValue),q=query(collection(db,"complaints"),where("instituteCode","==",code),limit(500)),snap=await getDocs(q);return snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));}
-export async function updateComplaintStatus(complaintId,status){const ref=doc(db,"complaints",cleanText(complaintId)),snap=await getDoc(ref);if(!snap.exists())throw Object.assign(new Error("Complaint not found"),{code:"complaint-not-found"});const c=snap.data(),next=cleanText(status);await updateDoc(ref,{status:next,updatedAt:serverTimestamp()});if(c.studentId)await createNotification({instituteCode:c.instituteCode,recipientType:"resident",recipientId:c.studentId,title:"Complaint status updated",message:`${c.subject||"Complaint"} is now ${next.replaceAll("-"," ")}.`,type:"complaint",relatedType:"complaint",relatedId:complaintId});await createAuditLog({instituteCode:c.instituteCode,actorType:"admin",action:"complaint_status_changed",entityType:"complaint",entityId:complaintId,summary:c.subject,newValue:{status:next}});return true;}
+export async function updateComplaintStatus(complaintId,status){await updateDoc(doc(db,"complaints",cleanText(complaintId)),{status:cleanText(status),updatedAt:serverTimestamp()});return true;}
 export async function submitStudentFeePaymentRequest(input){const studentId=normalizeCode(input.studentId),instituteCode=normalizeCode(input.instituteCode),amount=Number(input.amount||0),reference=cleanText(input.reference);if(!studentId||!instituteCode||amount<=0||!reference)throw Object.assign(new Error("Invalid payment request"),{code:"invalid-payment-request"});const ref=doc(collection(db,"payments"));const data={paymentId:ref.id,studentId,studentName:cleanText(input.studentName),instituteCode,amount,mode:"UPI",reference,status:"pending_verification",createdAt:serverTimestamp(),paidAt:serverTimestamp()};await setDoc(ref,data);return data;}
 
 
@@ -1011,7 +957,6 @@ export async function saveAdmissionFeeSettings(input){
   const data={instituteCode,instituteId:cleanText(input.instituteId),payeeName:cleanText(input.payeeName),upiId:cleanText(input.upiId),paymentContact:cleanText(input.paymentContact).replace(/\D/g,""),paymentQrDataUrl:String(input.paymentQrDataUrl||""),defaultTotalFees:Number(input.defaultTotalFees||0),shareInstituteId:cleanText(input.shareInstituteId)||instituteCode,shareInstitutePassword:String(input.shareInstitutePassword||""),updatedAt:serverTimestamp()};
   await setDoc(doc(db,"instituteBranding",instituteCode),data,{merge:true});
   await setDoc(doc(db,"instituteAccess",instituteCode),{payeeName:data.payeeName,upiId:data.upiId,paymentContact:data.paymentContact,paymentQrDataUrl:data.paymentQrDataUrl,defaultTotalFees:data.defaultTotalFees,shareInstituteId:data.shareInstituteId,shareInstitutePassword:data.shareInstitutePassword,updatedAt:serverTimestamp()},{merge:true});
-  await createAuditLog({instituteCode,actorType:"admin",action:"admission_fee_settings_changed",entityType:"settings",entityId:instituteCode,summary:"Admission fee and payment settings updated"});
   return {...data,updatedAt:new Date()};
 }
 
@@ -1027,7 +972,6 @@ export async function saveInstituteBranding(input){
   const data={instituteCode,instituteId:cleanText(input.instituteId),instituteName:cleanText(input.instituteName),shortName:cleanText(input.shortName),logoUrl:cleanText(input.logoUrl),primaryColor:cleanText(input.primaryColor)||"#0b4f8a",secondaryColor:cleanText(input.secondaryColor)||"#16866b",contactNumber:cleanText(input.contactNumber).replace(/\D/g,""),upiId:cleanText(input.upiId),defaultTotalFees:Number(input.defaultTotalFees||0),welcomeMessage:cleanText(input.welcomeMessage),updatedAt:serverTimestamp()};
   await setDoc(doc(db,"instituteBranding",instituteCode),data,{merge:true});
   await setDoc(doc(db,"instituteAccess",instituteCode),{instituteName:data.instituteName,upiId:data.upiId,updatedAt:serverTimestamp()},{merge:true});
-  await createAuditLog({instituteCode,actorType:"admin",action:"dashboard_settings_changed",entityType:"settings",entityId:instituteCode,summary:"Dashboard branding settings updated"});
   return {...data,updatedAt:new Date()};
 }
 
@@ -1068,7 +1012,7 @@ export async function exportInstituteBackup(instituteCodeValue){
       throw error;
     }
   }
-  return {format:"HMOS_INSTITUTE_BACKUP_V1",appVersion:"4.6.0",generatedAt:new Date().toISOString(),instituteCode:code,totalRecords,collections};
+  return {format:"HMOS_INSTITUTE_BACKUP_V1",appVersion:"4.5.4",generatedAt:new Date().toISOString(),instituteCode:code,totalRecords,collections};
 }
 function serializeBackupValue(value){
   if(value===null||value===undefined)return value??null;
@@ -1089,7 +1033,7 @@ export async function restoreInstituteBackup(payload,instituteCodeValue){
   if(!code)throw Object.assign(new Error("Institute code is required"),{code:"missing-institute-code"});
   if(payload?.format!=="HMOS_INSTITUTE_BACKUP_V1"||normalizeCode(payload?.instituteCode)!==code||!payload?.collections)throw Object.assign(new Error("Backup file does not match this institute"),{code:"backup-institute-mismatch"});
   const allowed=["students","pendingAdmissions","rooms","fees","payments","dailyMenus","mealAttendance","movements","complaints","approvalRequests","notifications","deletedRecords"];
-  let restoredRecords=0,restoredCollections=0,skippedNewerRecords=0;
+  let restoredRecords=0,restoredCollections=0;
   for(const name of allowed){
     const rows=Array.isArray(payload.collections[name])?payload.collections[name]:[];
     if(!rows.length)continue;
@@ -1099,53 +1043,23 @@ export async function restoreInstituteBackup(payload,instituteCodeValue){
       for(const row of rows.slice(offset,offset+400)){
         const id=cleanText(row?.id);
         if(!id)continue;
-        const targetRef=doc(db,name,id),liveSnap=await getDoc(targetRef);
         const revived=reviveBackupValue(row);
-        const toMillis=v=>v?.toMillis instanceof Function?v.toMillis():(v?.toDate instanceof Function?v.toDate().getTime():(v?new Date(v).getTime():0));
-        const backupStamp=toMillis(revived.updatedAt||revived.approvedAt||revived.createdAt);
-        const liveData=liveSnap.exists()?liveSnap.data():null,liveStamp=liveData?toMillis(liveData.updatedAt||liveData.approvedAt||liveData.createdAt):0;
-        if(liveSnap.exists()&&liveStamp&&backupStamp&&liveStamp>backupStamp){skippedNewerRecords++;continue;}
         revived.instituteCode=code;
         revived.recoveredAt=serverTimestamp();
-        batch.set(targetRef,revived,{merge:true});
+        batch.set(doc(db,name,id),revived,{merge:false});
         restoredRecords++;
       }
       await batch.commit();
     }
   }
-  await createAuditLog({instituteCode:code,actorType:"admin",action:"backup_restore",entityType:"backup",entityId:cleanText(payload.generatedAt)||"backup",summary:`Safe backup recovery restored ${restoredRecords} records across ${restoredCollections} collections`,newValue:{backupGeneratedAt:payload.generatedAt||null,restoredRecords,restoredCollections,skippedNewerRecords,mode:"safe_merge"}});
-  return {restoredRecords,restoredCollections,skippedNewerRecords,mode:"safe_merge"};
+  await createAuditLog({instituteCode:code,actorType:"admin",action:"backup_restore",entityType:"backup",entityId:cleanText(payload.generatedAt)||"backup",summary:`Safe backup recovery restored ${restoredRecords} records across ${restoredCollections} collections`,newValue:{backupGeneratedAt:payload.generatedAt||null,restoredRecords,restoredCollections,mode:"safe_merge"}});
+  return {restoredRecords,restoredCollections,mode:"safe_merge"};
 }
 
 export async function listBackupSnapshots(instituteCodeValue){const code=normalizeCode(instituteCodeValue),q=query(collection(db,"backupJobs"),where("instituteCode","==",code),limit(100)),snap=await getDocs(q);return snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(b.backupDate||"").localeCompare(String(a.backupDate||"")));}
 export async function findDuplicateAdmissions(input){const code=normalizeCode(input.instituteCode),phone=cleanText(input.studentPhone).replace(/\D/g,""),parent=cleanText(input.parentPhone).replace(/\D/g,""),name=cleanText(input.studentName).toLowerCase(),dob=cleanText(input.dateOfBirth),aadhaar=cleanText(input.aadhaarLast4);const q=query(collection(db,"students"),where("instituteCode","==",code),limit(1000));const snap=await getDocs(q);return snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>!x.isDeleted&&((phone&&cleanText(x.studentPhone)===phone)||(name&&parent&&cleanText(x.studentName).toLowerCase()===name&&cleanText(x.parentPhone)===parent)||(dob&&aadhaar&&cleanText(x.dateOfBirth)===dob&&cleanText(x.aadhaarLast4)===aadhaar)));}
 
 
-
-
-export async function repairInstituteBedAssignments(instituteCodeValue){
-  const code=normalizeCode(instituteCodeValue);if(!code)return {repaired:0};
-  const [studentsSnap,roomsSnap]=await Promise.all([
-    getDocs(query(collection(db,"students"),where("instituteCode","==",code),limit(5000))),
-    getDocs(query(collection(db,"rooms"),where("instituteCode","==",code),limit(1000)))
-  ]);
-  const students=studentsSnap.docs.map(d=>({id:d.id,...d.data()})).filter(s=>s.accountStatus!=="archived"&&s.roomId&&s.bedNumber);
-  const byRoom=new Map();students.forEach(s=>{const arr=byRoom.get(String(s.roomId))||[];arr.push(s);byRoom.set(String(s.roomId),arr);});
-  let repaired=0;
-  for(const roomDoc of roomsSnap.docs){
-    const assigned=byRoom.get(String(roomDoc.id))||[];if(!assigned.length)continue;
-    const room=roomDoc.data(),beds=(room.beds||[]).map(b=>({...b}));let changed=false;
-    for(const s of assigned){
-      const bed=beds.find(b=>String(b.bedNumber)===String(s.bedNumber));if(!bed)continue;
-      if(bed.status!=="occupied"||normalizeCode(bed.studentId)!==normalizeCode(s.studentId)||cleanText(bed.studentName)!==cleanText(s.studentName)){
-        bed.status="occupied";bed.studentId=normalizeCode(s.studentId);bed.studentName=cleanText(s.studentName);delete bed.pendingAdmissionId;changed=true;repaired++;
-      }
-    }
-    if(changed)await updateDoc(roomDoc.ref,{beds,occupiedBeds:beds.filter(b=>b.status==="occupied").length,updatedAt:serverTimestamp()});
-  }
-  if(repaired)await createAuditLog({instituteCode:code,actorType:"system",action:"bed_assignment_reconciled",entityType:"rooms",entityId:code,summary:`Repaired ${repaired} resident bed assignment(s)`});
-  return {repaired};
-}
 
 export async function getInstituteLiveMetrics(instituteCodeValue) {
   const instituteCode = normalizeCode(instituteCodeValue);
@@ -1158,8 +1072,8 @@ export async function getInstituteLiveMetrics(instituteCodeValue) {
   };
   const [residents, pendingAdmissions, openComplaints, outsideResidents, pendingApprovals, roomsSnap, feesSnap] = await Promise.all([
     countQuery("students", [where("accountStatus", "==", "active")]),
-    countQuery("pendingAdmissions", [where("status", "==", "pending_payment_verification")]),
-    countQuery("complaints", [where("status", "in", ["submitted", "in-review"])]).catch(async()=>{const snap=await getDocs(query(collection(db,"complaints"),where("instituteCode","==",instituteCode),limit(1000)));return snap.docs.filter(d=>["submitted","in-review"].includes(d.data().status)).length;}),
+    countQuery("pendingAdmissions", [where("status", "==", "pending")]),
+    countQuery("complaints", [where("status", "in", ["open", "in-review"])]).catch(() => countQuery("complaints")),
     countQuery("movements", [where("status", "==", "outside")]),
     countQuery("approvalRequests", [where("status", "==", "pending")]),
     getDocs(query(collection(db, "rooms"), where("instituteCode", "==", instituteCode), limit(1000))),
@@ -1213,7 +1127,6 @@ export async function changeInstituteAdminCredentials(instituteCodeValue, adminI
  if(!instituteCode||!adminId||password.length<5)throw Object.assign(new Error("Invalid admin credentials"),{code:"invalid-admin-credentials"});
  const adminPasswordHash=await sha256(`${instituteCode}:admin:${adminId}:${password}`);
  await withTimeout(updateDoc(doc(db,"instituteAccess",instituteCode),{adminId,adminPasswordHash,adminUpdatedAt:serverTimestamp(),updatedAt:serverTimestamp()}),12000,"admin-credentials-timeout");
- await createAuditLog({instituteCode,actorType:"admin",action:"admin_credentials_changed",entityType:"instituteAccess",entityId:instituteCode,summary:"Institute admin login credentials changed"});
  return {adminId};
 }
 

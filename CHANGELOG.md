@@ -1,17 +1,3 @@
-# HMOS V4.6.0 — Operations Reliability Fix
-
-- Fixed resident Attendance page crash by adding meal windows.
-- Entry / Exit V2: required GPS share, clickable Outside/Returned lists, resident detail, map, Call Resident, Call Parent, actual return history.
-- Fixed dashboard live counters for pending admissions and open complaints; metric cards now navigate.
-- Added automatic bed-assignment reconciliation from active resident records.
-- Safer backup restore now skips newer live records instead of overwriting them.
-- Rebuilt all Admin PDF reports with a premium preview and Print / Save as PDF.
-- Complaints now open full detail view; status changes notify residents and write audit logs.
-- Fee accounts hide payment entry when fully paid and show payment history.
-- Expanded audit logging for admissions, fees, complaints, entry/exit, settings and admin credential changes.
-- Removed default admin password from Settings UI and masked WhatsApp credential field.
-- Fixed admission notification recipient type for student/resident notifications.
-
 # HMOS Changelog
 
 ## 4.5.4 – Backup & Recovery V2
