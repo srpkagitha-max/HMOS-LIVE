@@ -462,3 +462,14 @@ html,body{max-width:100%;overflow-x:hidden}
 .movement-call-button{text-decoration:none;display:flex;align-items:center;justify-content:center;min-height:48px;border-radius:14px}
 .movement-no-location{padding:13px 14px;border-radius:14px;background:#f5f7f9;color:#748391;text-align:center}
 @media(max-width:560px){.movement-detail-grid,.movement-action-grid{grid-template-columns:1fr}.movement-action-grid .primary,.movement-action-grid .movement-no-location{grid-column:auto}}
+
+
+/* V4.5.8 robust movement list sheets */
+.movement-admin-hint{margin-top:18px;border:1px dashed #cad8e2;border-radius:18px;padding:18px;text-align:center;display:flex;flex-direction:column;gap:5px;color:#708292}
+.movement-admin-hint strong{color:#173554}
+.movement-list-overlay{position:fixed;inset:0;z-index:9998;background:rgba(7,24,37,.48);display:flex;align-items:flex-end;justify-content:center}
+.movement-list-sheet{width:min(100%,720px);max-height:86vh;overflow:auto;background:#fff;border-radius:30px 30px 0 0;box-shadow:0 -18px 48px rgba(0,0,0,.18)}
+.movement-list-head{padding:24px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:1px solid #dde6ed}
+.movement-list-head h2{margin:6px 0 2px}.movement-list-head p{margin:0;color:#6f8190}
+.movement-list-close{border:0;background:#eef5fa;color:#0b568f;width:48px;height:48px;border-radius:16px;font-size:2rem;line-height:1;cursor:pointer}
+.movement-list-body{padding:18px 20px 26px}

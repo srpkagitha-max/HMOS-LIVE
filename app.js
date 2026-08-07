@@ -9,10 +9,10 @@ import {
   submitStudentFeePaymentRequest, getInstituteBranding, saveInstituteBranding, saveAdmissionFeeSettings,
   createApprovalRequest, listApprovalRequests, decideApprovalRequest, createNotification, listNotifications, markNotificationRead, createAuditLog, listAuditLogs, softDeleteRecord, listRecycleBin, restoreDeletedRecord, createBackupSnapshot, listBackupSnapshots, exportInstituteBackup, restoreInstituteBackup, findDuplicateAdmissions,
   loginInstituteAdmin, changeInstituteAdminCredentials, checkAdmissionStatus, getSystemHealth, getInstituteLiveMetrics, reconcileResidentBedAssignments
-} from "./firebase-service.js?v=4.5.7";
+} from "./firebase-service.js?v=4.5.8";
 
 const app = document.querySelector("#app");
-const HMOS_VERSION = "4.5.7";
+const HMOS_VERSION = "4.5.8";
 window.__HMOS_VERSION__ = HMOS_VERSION;
 
 const activeOperations = new Set();
@@ -384,7 +384,7 @@ async function renderKitchen(){
 }
 async function renderEntryExit(){
   const i=state.instituteSession;if(!i){state.screen="institute";return render();}
-  app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page"><button id="entry-back" class="back">← Institute Home</button><div class="compact-heading"><span class="step">Movement control</span><h2>Entry / Exit</h2><p>Tap Outside or Returned to see resident names. Tap a resident for trip details, location and call actions.</p></div><div class="movement-summary-grid"><button id="movement-outside-tab" class="movement-summary-card active" type="button"><span>Outside Now</span><strong id="outside-count">—</strong><small>Tap to view names</small></button><button id="movement-returned-tab" class="movement-summary-card" type="button"><span>Returned</span><strong id="returned-count">—</strong><small>Tap to view names</small></button></div><div class="compact-section"><h3 id="movement-section-title">Currently Outside</h3><div id="movement-admin-list"><div class="loading-card"><div class="loader"></div></div></div></div></section>`,true);
+  app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page"><button id="entry-back" class="back">← Institute Home</button><div class="compact-heading"><span class="step">Movement control</span><h2>Entry / Exit</h2><p>Tap Outside or Returned to open the resident list. Then tap a resident for full trip details.</p></div><div id="movement-summary-grid" class="movement-summary-grid"><button id="movement-outside-tab" class="movement-summary-card" type="button" data-movement-type="outside"><span>Outside Now</span><strong id="outside-count">—</strong><small>Tap to view names</small></button><button id="movement-returned-tab" class="movement-summary-card" type="button" data-movement-type="returned"><span>Returned</span><strong id="returned-count">—</strong><small>Tap to view names</small></button></div><div class="movement-admin-hint"><strong>Select a card above</strong><span>Outside and Returned residents will open in a list.</span></div></section>`,true);
   document.querySelector("#entry-back").onclick=()=>{state.screen="admin-home";render();};
 
   const dateTimeText=value=>{
@@ -397,51 +397,6 @@ async function renderEntryExit(){
     const lat=Number(m?.latitude),lng=Number(m?.longitude);
     return Number.isFinite(lat)&&Number.isFinite(lng)?`https://www.google.com/maps?q=${lat},${lng}`:"";
   };
-  const openMovement=(m,students)=>{
-    const resident=students.find(s=>String(s.studentId||"")===String(m.studentId||""))||{};
-    const url=mapUrl(m);
-    const overlay=document.createElement("div");
-    overlay.className="movement-detail-overlay";
-    overlay.innerHTML=`<section class="movement-detail-sheet" role="dialog" aria-modal="true" aria-label="Movement details">
-      <div class="movement-detail-head"><div><span class="step">${m.status==="outside"?"Currently outside":"Returned resident"}</span><h2>${esc(m.studentName||resident.studentName||m.studentId||"Resident")}</h2></div><button type="button" class="movement-close" aria-label="Close">×</button></div>
-      <div class="movement-detail-body">
-        <div class="movement-detail-grid">
-          <div><small>Reason</small><strong>${esc(m.reason||"—")}</strong></div>
-          <div><small>Where</small><strong>${esc(m.location||"—")}</strong></div>
-          <div><small>Leaving</small><strong>${esc(`${m.leavingDate||""} ${m.leavingTime||""}`)}</strong></div>
-          <div><small>Expected Return</small><strong>${esc(`${m.returnDate||""} ${m.returnTime||""}`)}</strong></div>
-          ${m.actualReturnAt?`<div><small>Actual Return</small><strong>${esc(dateTimeText(m.actualReturnAt))}</strong></div>`:""}
-          <div><small>Student ID</small><strong>${esc(m.studentId||"—")}</strong></div>
-        </div>
-        <div class="movement-action-grid">
-          ${url?`<button type="button" id="movement-view-location" class="primary">📍 View Location</button>`:`<div class="movement-no-location">Location was not shared for this older record.</div>`}
-          ${resident.studentPhone?`<a class="secondary movement-call-button" href="tel:${esc(resident.studentPhone)}">Call Resident</a>`:`<button class="secondary" disabled>Call Resident unavailable</button>`}
-          ${resident.parentPhone?`<a class="secondary movement-call-button" href="tel:${esc(resident.parentPhone)}">Call Parent</a>`:`<button class="secondary" disabled>Call Parent unavailable</button>`}
-          ${m.status==="outside"?`<button type="button" id="movement-mark-entry" class="secondary">Mark Entry</button>`:""}
-        </div>
-        <p id="movement-detail-message" class="form-message"></p>
-      </div>
-    </section>`;
-    document.body.appendChild(overlay);
-    const close=()=>overlay.remove();
-    overlay.querySelector(".movement-close").onclick=close;
-    overlay.onclick=e=>{if(e.target===overlay)close();};
-    const loc=overlay.querySelector("#movement-view-location");
-    if(loc)loc.onclick=()=>window.open(url,"_blank","noopener");
-    const mark=overlay.querySelector("#movement-mark-entry");
-    if(mark)mark.onclick=async()=>{
-      const msg=overlay.querySelector("#movement-detail-message");
-      mark.disabled=true;mark.textContent="Marking…";
-      try{
-        await markStudentEntry(m.id);
-        msg.textContent="Resident marked as returned.";msg.className="form-message show success-message";
-        setTimeout(()=>{close();renderEntryExit();},500);
-      }catch(err){
-        msg.textContent=humanError(err,"Could not mark entry.");msg.className="form-message show error";
-        mark.disabled=false;mark.textContent="Mark Entry";
-      }
-    };
-  };
 
   try{
     const [movements,students]=await Promise.all([listInstituteMovements(i.instituteCode),listInstituteStudents(i.instituteCode)]);
@@ -449,24 +404,79 @@ async function renderEntryExit(){
     const outside=movements.filter(x=>x.status==="outside"),returned=movements.filter(x=>x.status==="returned");
     document.querySelector("#outside-count").textContent=outside.length;
     document.querySelector("#returned-count").textContent=returned.length;
-    const list=document.querySelector("#movement-admin-list"),title=document.querySelector("#movement-section-title");
-    const outsideTab=document.querySelector("#movement-outside-tab"),returnedTab=document.querySelector("#movement-returned-tab");
 
-    const paint=type=>{
+    const openMovement=m=>{
+      const resident=students.find(s=>String(s.studentId||"")===String(m.studentId||""))||{};
+      const url=mapUrl(m);
+      const overlay=document.createElement("div");
+      overlay.className="movement-detail-overlay";
+      overlay.innerHTML=`<section class="movement-detail-sheet" role="dialog" aria-modal="true" aria-label="Movement details">
+        <div class="movement-detail-head"><div><span class="step">${m.status==="outside"?"Currently outside":"Returned resident"}</span><h2>${esc(m.studentName||resident.studentName||m.studentId||"Resident")}</h2></div><button type="button" class="movement-close" aria-label="Close">×</button></div>
+        <div class="movement-detail-body">
+          <div class="movement-detail-grid">
+            <div><small>Reason</small><strong>${esc(m.reason||"—")}</strong></div>
+            <div><small>Where</small><strong>${esc(m.location||"—")}</strong></div>
+            <div><small>Leaving</small><strong>${esc(`${m.leavingDate||""} ${m.leavingTime||""}`)}</strong></div>
+            <div><small>Expected Return</small><strong>${esc(`${m.returnDate||""} ${m.returnTime||""}`)}</strong></div>
+            ${m.actualReturnAt?`<div><small>Actual Return</small><strong>${esc(dateTimeText(m.actualReturnAt))}</strong></div>`:""}
+            <div><small>Student ID</small><strong>${esc(m.studentId||"—")}</strong></div>
+          </div>
+          <div class="movement-action-grid">
+            ${url?`<button type="button" id="movement-view-location" class="primary">📍 View Location</button>`:`<div class="movement-no-location">Location was not shared for this older record.</div>`}
+            ${resident.studentPhone?`<a class="secondary movement-call-button" href="tel:${esc(resident.studentPhone)}">Call Resident</a>`:`<button class="secondary" disabled>Call Resident unavailable</button>`}
+            ${resident.parentPhone?`<a class="secondary movement-call-button" href="tel:${esc(resident.parentPhone)}">Call Parent</a>`:`<button class="secondary" disabled>Call Parent unavailable</button>`}
+            ${m.status==="outside"?`<button type="button" id="movement-mark-entry" class="secondary">Mark Entry</button>`:""}
+          </div>
+          <p id="movement-detail-message" class="form-message"></p>
+        </div>
+      </section>`;
+      document.body.appendChild(overlay);
+      const close=()=>overlay.remove();
+      overlay.querySelector(".movement-close").onclick=close;
+      overlay.onclick=e=>{if(e.target===overlay)close();};
+      const loc=overlay.querySelector("#movement-view-location");
+      if(loc)loc.onclick=()=>window.open(url,"_blank","noopener");
+      const mark=overlay.querySelector("#movement-mark-entry");
+      if(mark)mark.onclick=async()=>{
+        const msg=overlay.querySelector("#movement-detail-message");
+        mark.disabled=true;mark.textContent="Marking…";
+        try{
+          await markStudentEntry(m.id);
+          msg.textContent="Resident marked as returned.";msg.className="form-message show success-message";
+          setTimeout(()=>{close();renderEntryExit();},450);
+        }catch(err){
+          msg.textContent=humanError(err,"Could not mark entry.");msg.className="form-message show error";
+          mark.disabled=false;mark.textContent="Mark Entry";
+        }
+      };
+    };
+
+    const openResidentList=type=>{
       const rows=type==="outside"?outside:returned;
-      title.textContent=type==="outside"?"Currently Outside":"Returned Residents";
-      outsideTab.classList.toggle("active",type==="outside");
-      returnedTab.classList.toggle("active",type==="returned");
-      list.innerHTML=rows.map(m=>`<button type="button" class="movement-resident-row" data-movement-open="${esc(m.id)}"><div><strong>${esc(m.studentName||m.studentId)}</strong><span>${esc(m.reason||"")} · ${esc(m.location||"")}</span><small>${type==="outside"?`Expected return: ${esc(`${m.returnDate||""} ${m.returnTime||""}`)}`:`Returned: ${esc(dateTimeText(m.actualReturnAt))}`}</small></div><span class="movement-row-arrow">›</span></button>`).join("")||`<div class="empty-state compact-empty"><strong>${type==="outside"?"No one is outside.":"No returned records yet."}</strong></div>`;
-      list.querySelectorAll("[data-movement-open]").forEach(row=>row.onclick=()=>{
-        const m=movements.find(x=>x.id===row.dataset.movementOpen);if(m)openMovement(m,students);
+      const overlay=document.createElement("div");
+      overlay.className="movement-list-overlay";
+      overlay.innerHTML=`<section class="movement-list-sheet" role="dialog" aria-modal="true" aria-label="${type==="outside"?"Outside residents":"Returned residents"}">
+        <div class="movement-list-head"><div><span class="step">Movement list</span><h2>${type==="outside"?"Outside Now":"Returned Residents"}</h2><p>${rows.length} resident${rows.length===1?"":"s"}</p></div><button type="button" class="movement-list-close" aria-label="Close">×</button></div>
+        <div class="movement-list-body">${rows.map(m=>`<button type="button" class="movement-resident-row" data-list-movement="${esc(m.id)}"><div><strong>${esc(m.studentName||m.studentId)}</strong><span>${esc(m.reason||"")} · ${esc(m.location||"")}</span><small>${type==="outside"?`Expected return: ${esc(`${m.returnDate||""} ${m.returnTime||""}`)}`:`Returned: ${esc(dateTimeText(m.actualReturnAt))}`}</small></div><span class="movement-row-arrow">›</span></button>`).join("")||`<div class="empty-state compact-empty"><strong>${type==="outside"?"No one is outside.":"No returned records yet."}</strong></div>`}</div>
+      </section>`;
+      document.body.appendChild(overlay);
+      const closeList=()=>overlay.remove();
+      overlay.querySelector(".movement-list-close").onclick=closeList;
+      overlay.onclick=e=>{if(e.target===overlay)closeList();};
+      overlay.querySelectorAll("[data-list-movement]").forEach(row=>row.onclick=()=>{
+        const m=movements.find(x=>x.id===row.dataset.listMovement);
+        if(m){closeList();openMovement(m);}
       });
     };
-    outsideTab.onclick=()=>paint("outside");
-    returnedTab.onclick=()=>paint("returned");
-    paint("outside");
+
+    const grid=document.querySelector("#movement-summary-grid");
+    grid.addEventListener("click",e=>{
+      const card=e.target.closest("[data-movement-type]");
+      if(!card||!grid.contains(card))return;
+      openResidentList(card.dataset.movementType);
+    });
   }catch(err){
-    document.querySelector("#movement-admin-list").innerHTML=`<p class="form-message show error">${esc(humanError(err,"Could not load movement records."))}</p>`;
+    document.querySelector("#movement-summary-grid").insertAdjacentHTML("afterend",`<p class="form-message show error">${esc(humanError(err,"Could not load movement records."))}</p>`);
   }
 }
 async function renderComplaintsAdmin(){

@@ -1,0 +1,11 @@
+HMOS V4.5.8 OUTSIDE / RETURNED TAP TEST
+
+1. Admin -> Entry / Exit.
+2. Tap Outside Now.
+3. A bottom sheet must open with outside resident names.
+4. Tap a resident name.
+5. Full movement details must open.
+6. Confirm View Location, Call Resident, Call Parent and Mark Entry.
+7. Close and tap Returned.
+8. Returned resident names must open in a bottom sheet.
+9. Tap a returned resident to view full return details.

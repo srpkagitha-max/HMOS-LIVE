@@ -1,3 +1,10 @@
+# HMOS V4.5.8 — Outside / Returned Tap Fix
+
+- Outside Now and Returned cards now open a dedicated resident-list bottom sheet.
+- Uses one delegated click handler for more reliable Android/mobile tapping.
+- Resident name tap opens full movement details.
+- Existing View Location, Call Resident, Call Parent and Mark Entry actions are preserved.
+
 # HMOS V4.5.7 — Entry / Exit V2
 
 - Resident: Reason, Where, Leaving Date/Time and Expected Return Date/Time.
