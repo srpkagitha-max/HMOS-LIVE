@@ -1,0 +1,9 @@
+HMOS V4.5.11 PDF REPORTS TEST
+
+1. Admin -> PDF's.
+2. Tap All Residents PDF: a new premium report window must open.
+3. Use Print / Save PDF and confirm the print preview opens.
+4. Repeat for Pending Fees and Fees Due Next Week.
+5. Repeat for Breakfast, Lunch and Dinner Attendance.
+6. Repeat for Currently Outside and Complaints.
+7. Empty reports must show a clean 'No records' row and must not crash.

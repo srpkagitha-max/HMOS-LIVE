@@ -9,10 +9,10 @@ import {
   submitStudentFeePaymentRequest, getInstituteBranding, saveInstituteBranding, saveAdmissionFeeSettings,
   createApprovalRequest, listApprovalRequests, decideApprovalRequest, createNotification, listNotifications, markNotificationRead, createAuditLog, listAuditLogs, softDeleteRecord, listRecycleBin, restoreDeletedRecord, createBackupSnapshot, listBackupSnapshots, exportInstituteBackup, restoreInstituteBackup, findDuplicateAdmissions,
   loginInstituteAdmin, changeInstituteAdminCredentials, checkAdmissionStatus, getSystemHealth, getInstituteLiveMetrics, reconcileResidentBedAssignments
-} from "./firebase-service.js?v=4.5.10";
+} from "./firebase-service.js?v=4.5.11";
 
 const app = document.querySelector("#app");
-const HMOS_VERSION = "4.5.10";
+const HMOS_VERSION = "4.5.11";
 window.__HMOS_VERSION__ = HMOS_VERSION;
 
 const activeOperations = new Set();
@@ -621,7 +621,187 @@ async function renderComplaintsAdmin(){
    document.querySelector("#complaint-admin-list").innerHTML=`<p class="form-message show error">${esc(err.code||"Could not load")}</p>`;
  }
 }
-function renderPdfReports(){const i=state.instituteSession;if(!i){state.screen="institute";return render();}const reports=["All Residents PDF","Pending Fees PDF","Fees Due Next Week PDF","Breakfast Attendance PDF","Lunch Attendance PDF","Dinner Attendance PDF","Currently Outside PDF","Complaints PDF"];app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page"><button id="pdf-back" class="back">← Institute Home</button><div class="compact-heading"><span class="step">Reports</span><h2>PDF’s</h2><p>Open a report and use Print → Save as PDF.</p></div><div class="compact-report-grid">${reports.map((r,n)=>`<button class="secondary compact-report" data-report="${n}">${r}</button>`).join("")}</div></section>`,true);document.querySelector("#pdf-back").onclick=()=>{state.screen="admin-home";render();};document.querySelectorAll("[data-report]").forEach(b=>b.onclick=()=>{prepareInstitutePrint(reports[Number(b.dataset.report)].replace(/ PDF$/,""));window.print();});}
+
+function prepareInstitutePrint(title="HMOS Report"){
+  document.title=`${state.instituteSession?.instituteName||"HMOS"} - ${String(title||"Report").replaceAll("_"," ")}`;
+}
+
+function reportDateTime(value){
+  try{
+    const d=value?.toDate?value.toDate():(value?.seconds?new Date(value.seconds*1000):(value?new Date(value):null));
+    return d && !Number.isNaN(d.getTime()) ? d.toLocaleString("en-IN") : "—";
+  }catch{return "—";}
+}
+
+function reportDateOnly(value){
+  try{
+    const d=value?.toDate?value.toDate():(value?.seconds?new Date(value.seconds*1000):(value?new Date(value):null));
+    return d && !Number.isNaN(d.getTime()) ? d.toLocaleDateString("en-IN") : (value||"—");
+  }catch{return value||"—";}
+}
+
+function openPremiumReportWindow({title,subtitle="",columns=[],rows=[],summary=[],emptyText="No records found."}){
+  const i=state.instituteSession||{};
+  const w=window.open("","_blank");
+  if(!w) return null;
+  const safe=x=>esc(x==null?"":String(x));
+  const tableRows=rows.length
+    ? rows.map((row,idx)=>`<tr><td class="serial">${idx+1}</td>${columns.map(c=>`<td>${safe(typeof c.value==="function"?c.value(row):row[c.value])}</td>`).join("")}</tr>`).join("")
+    : `<tr><td colspan="${columns.length+1}" class="empty">${safe(emptyText)}</td></tr>`;
+  const summaryHtml=summary.length
+    ? `<div class="summary">${summary.map(s=>`<article><span>${safe(s.label)}</span><strong>${safe(s.value)}</strong></article>`).join("")}</div>`
+    : "";
+  const generated=new Date().toLocaleString("en-IN");
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${safe(i.instituteName||"HMOS")} - ${safe(title)}</title><style>
+    *{box-sizing:border-box}body{margin:0;background:#eef4f8;color:#132b46;font-family:Arial,Helvetica,sans-serif}
+    .page{width:min(1100px,calc(100% - 32px));margin:28px auto;background:white;border-radius:24px;box-shadow:0 18px 55px rgba(16,45,73,.12);overflow:hidden}
+    .hero{padding:28px 32px;background:linear-gradient(135deg,#0b4f88,#173e66);color:white}
+    .brand{display:flex;align-items:center;gap:16px}.logo{width:58px;height:58px;border-radius:17px;background:white;color:#2e6848;display:grid;place-items:center;font-size:30px;font-weight:800}
+    .brand h1{margin:0;font-size:27px}.brand p{margin:5px 0 0;opacity:.84}
+    .report-head{padding:26px 32px 14px}.eyebrow{text-transform:uppercase;letter-spacing:.12em;font-weight:800;color:#1f668f;font-size:12px}
+    .report-head h2{font-size:31px;margin:7px 0 6px}.report-head p{margin:0;color:#647687}
+    .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;padding:10px 32px 22px}
+    .summary article{border:1px solid #dce6ed;background:#f8fbfd;border-radius:16px;padding:15px}.summary span{display:block;color:#70808f;font-size:12px;margin-bottom:5px}.summary strong{font-size:22px}
+    .table-wrap{padding:0 32px 30px;overflow:auto}table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid #dbe5ec;border-radius:16px;overflow:hidden;font-size:13px}
+    th{background:#f0f6fa;color:#31516b;text-align:left;padding:12px;border-bottom:1px solid #dbe5ec}td{padding:12px;border-bottom:1px solid #edf1f4;vertical-align:top}tr:last-child td{border-bottom:0}.serial{width:42px;color:#7b8995}.empty{text-align:center;padding:34px;color:#7a8996}
+    .footer{border-top:1px solid #e0e7ed;padding:18px 32px 26px;display:flex;justify-content:space-between;gap:12px;color:#72808d;font-size:11px}
+    .actions{padding:0 32px 24px;display:flex;justify-content:flex-end}.print{border:0;background:#0b5795;color:#fff;border-radius:12px;padding:12px 18px;font-weight:800;cursor:pointer}
+    @media(max-width:700px){.page{width:100%;margin:0;border-radius:0}.hero,.report-head,.table-wrap,.summary,.footer,.actions{padding-left:18px;padding-right:18px}.report-head h2{font-size:25px}table{font-size:11px}th,td{padding:9px}}
+    @media print{body{background:white}.page{width:100%;margin:0;box-shadow:none;border-radius:0}.actions{display:none}.hero{-webkit-print-color-adjust:exact;print-color-adjust:exact}.summary article,th{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+  </style></head><body><main class="page"><header class="hero"><div class="brand"><div class="logo">${safe((i.instituteName||"K")[0].toUpperCase())}</div><div><h1>${safe(i.instituteName||"Institute")}</h1><p>${safe(i.instituteCode||"")} ${i.ownerPhone?` · ${safe(i.ownerPhone)}`:""}</p></div></div></header><section class="report-head"><div class="eyebrow">HMOS Report</div><h2>${safe(title)}</h2><p>${safe(subtitle)}</p></section>${summaryHtml}<div class="table-wrap"><table><thead><tr><th>#</th>${columns.map(c=>`<th>${safe(c.label)}</th>`).join("")}</tr></thead><tbody>${tableRows}</tbody></table></div><div class="actions"><button class="print" onclick="window.print()">Print / Save PDF</button></div><footer class="footer"><span>Generated: ${safe(generated)}</span><span>Powered by HMOS – Hostel Management Operating System</span></footer></main></body></html>`);
+  w.document.close();
+  return w;
+}
+
+function renderPdfReports(){
+  const i=state.instituteSession;if(!i){state.screen="institute";return render();}
+  const reports=[
+    ["all-residents","All Residents PDF"],
+    ["pending-fees","Pending Fees PDF"],
+    ["fees-next-week","Fees Due Next Week PDF"],
+    ["breakfast","Breakfast Attendance PDF"],
+    ["lunch","Lunch Attendance PDF"],
+    ["dinner","Dinner Attendance PDF"],
+    ["outside","Currently Outside PDF"],
+    ["complaints","Complaints PDF"]
+  ];
+  app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page"><button id="pdf-back" class="back">← Institute Home</button><div class="compact-heading"><span class="step">Reports</span><h2>PDF’s</h2><p>Open a premium report, then use Print / Save PDF.</p></div><p id="pdf-message" class="form-message"></p><div class="compact-report-grid">${reports.map(([key,label])=>`<button class="secondary compact-report" data-report="${key}">${label}</button>`).join("")}</div></section>`,true);
+  document.querySelector("#pdf-back").onclick=()=>{state.screen="admin-home";render();};
+
+  const today=new Date().toISOString().slice(0,10);
+  const studentMap=students=>new Map(students.map(s=>[String(s.studentId||""),s]));
+  const roomBed=s=>[s.roomNumber?`Room ${s.roomNumber}`:"",s.bedNumber?`Bed ${s.bedNumber}`:""].filter(Boolean).join(" · ")||"—";
+
+  document.querySelectorAll("[data-report]").forEach(button=>button.onclick=async()=>{
+    const type=button.dataset.report;
+    const msg=document.querySelector("#pdf-message");
+    button.disabled=true;
+    const old=button.textContent;
+    button.textContent="Preparing…";
+    msg.textContent="Preparing report…";msg.className="form-message show";
+    try{
+      if(type==="all-residents"){
+        const students=(await listInstituteStudents(i.instituteCode)).filter(s=>(s.accountStatus||"active")==="active");
+        openPremiumReportWindow({
+          title:"All Residents",
+          subtitle:`Active resident register · ${reportDateOnly(today)}`,
+          summary:[{label:"Active Residents",value:students.length}],
+          columns:[
+            {label:"Student",value:r=>r.studentName||"—"},
+            {label:"Student ID",value:"studentId"},
+            {label:"Course / Class",value:r=>r.courseOrClass||"—"},
+            {label:"Room / Bed",value:roomBed},
+            {label:"Phone",value:r=>r.studentPhone||"—"},
+            {label:"Parent Phone",value:r=>r.parentPhone||"—"}
+          ],rows:students,emptyText:"No active residents."
+        });
+      }else if(type==="pending-fees"||type==="fees-next-week"){
+        const [students,fees]=await Promise.all([listInstituteStudents(i.instituteCode),listInstituteFees(i.instituteCode)]);
+        const sm=studentMap(students);
+        let selected=fees.filter(f=>Number(f.balanceAmount||0)>0);
+        if(type==="fees-next-week"){
+          const start=new Date();start.setHours(0,0,0,0);
+          const end=new Date(start);end.setDate(end.getDate()+7);end.setHours(23,59,59,999);
+          selected=selected.filter(f=>{
+            if(!f.dueDate)return false;
+            const d=new Date(`${f.dueDate}T00:00:00`);
+            return !Number.isNaN(d.getTime())&&d>=start&&d<=end;
+          });
+        }
+        const balance=selected.reduce((sum,f)=>sum+Number(f.balanceAmount||0),0);
+        openPremiumReportWindow({
+          title:type==="pending-fees"?"Pending Fees":"Fees Due Next Week",
+          subtitle:type==="pending-fees"?"Residents with outstanding fee balance.":"Outstanding balances due within the next 7 days.",
+          summary:[{label:"Accounts",value:selected.length},{label:"Outstanding",value:`₹${balance.toLocaleString("en-IN")}`}],
+          columns:[
+            {label:"Student",value:r=>sm.get(String(r.studentId||""))?.studentName||r.studentId||"—"},
+            {label:"Student ID",value:"studentId"},
+            {label:"Total Fee",value:r=>`₹${Number(r.totalFee||0).toLocaleString("en-IN")}`},
+            {label:"Paid",value:r=>`₹${Number(r.paidAmount||0).toLocaleString("en-IN")}`},
+            {label:"Balance",value:r=>`₹${Number(r.balanceAmount||0).toLocaleString("en-IN")}`},
+            {label:"Due Date",value:r=>r.dueDate||"—"}
+          ],rows:selected,emptyText:type==="pending-fees"?"No pending fees.":"No fees due in the next 7 days."
+        });
+      }else if(["breakfast","lunch","dinner"].includes(type)){
+        const [attendance,students]=await Promise.all([listInstituteMealAttendance(i.instituteCode,today),listInstituteStudents(i.instituteCode)]);
+        const sm=studentMap(students);
+        const selected=attendance.filter(a=>a.meal===type);
+        openPremiumReportWindow({
+          title:`${type[0].toUpperCase()+type.slice(1)} Attendance`,
+          subtitle:`Attendance for ${reportDateOnly(today)}`,
+          summary:[{label:"Present",value:selected.length}],
+          columns:[
+            {label:"Student",value:r=>r.studentName||sm.get(String(r.studentId||""))?.studentName||"—"},
+            {label:"Student ID",value:"studentId"},
+            {label:"Room / Bed",value:r=>roomBed(sm.get(String(r.studentId||""))||{})},
+            {label:"Status",value:r=>r.status||"present"},
+            {label:"Marked At",value:r=>reportDateTime(r.createdAt)}
+          ],rows:selected,emptyText:`No ${type} attendance marked.`
+        });
+      }else if(type==="outside"){
+        const movements=(await listInstituteMovements(i.instituteCode)).filter(m=>m.status==="outside");
+        openPremiumReportWindow({
+          title:"Currently Outside",
+          subtitle:"Residents currently outside the institute.",
+          summary:[{label:"Outside Now",value:movements.length}],
+          columns:[
+            {label:"Resident",value:r=>r.studentName||r.studentId||"—"},
+            {label:"Student ID",value:"studentId"},
+            {label:"Reason",value:r=>r.reason||"—"},
+            {label:"Where",value:r=>r.location||"—"},
+            {label:"Left",value:r=>`${r.leavingDate||""} ${r.leavingTime||""}`.trim()||"—"},
+            {label:"Expected Return",value:r=>`${r.returnDate||""} ${r.returnTime||""}`.trim()||"—"}
+          ],rows:movements,emptyText:"No residents are currently outside."
+        });
+      }else if(type==="complaints"){
+        const complaints=await listInstituteComplaints(i.instituteCode);
+        openPremiumReportWindow({
+          title:"Complaints",
+          subtitle:"Resident complaint register.",
+          summary:[
+            {label:"Total",value:complaints.length},
+            {label:"Open",value:complaints.filter(c=>!["resolved","rejected"].includes(c.status)).length},
+            {label:"Resolved",value:complaints.filter(c=>c.status==="resolved").length}
+          ],
+          columns:[
+            {label:"Resident",value:r=>r.studentName||r.studentId||"—"},
+            {label:"Category",value:r=>r.category||"Other"},
+            {label:"Subject",value:r=>r.subject||"Complaint"},
+            {label:"Complaint",value:r=>r.details||"—"},
+            {label:"Status",value:r=>r.status||"submitted"},
+            {label:"Submitted",value:r=>reportDateTime(r.createdAt)}
+          ],rows:complaints,emptyText:"No complaints."
+        });
+      }
+      msg.textContent="Report opened. Use Print / Save PDF in the report window.";msg.className="form-message show success-message";
+    }catch(err){
+      console.error("PDF report error",err);
+      msg.textContent=humanError(err,"Could not prepare report.");msg.className="form-message show error";
+    }finally{
+      button.disabled=false;button.textContent=old;
+    }
+  });
+}
 
 
 function renderNewAdmission(message="") {

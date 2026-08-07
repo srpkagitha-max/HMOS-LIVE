@@ -1,3 +1,11 @@
+# HMOS V4.5.11 — PDF Reports Repair
+
+- Fixes the PDF module crash caused by the missing prepareInstitutePrint function.
+- Rebuilds all eight Admin PDF reports as dedicated premium print views.
+- All Residents, Pending Fees, Fees Due Next Week, Breakfast/Lunch/Dinner Attendance, Currently Outside and Complaints now load live Firestore data.
+- Reports open in a separate print-friendly window with institute branding, summary cards, structured tables and a Print / Save PDF button.
+- Empty reports show a clear no-records message instead of crashing.
+
 # HMOS V4.5.10 — Admin Attendance Name Lists
 
 - Admin Kitchen attendance cards are now tappable.
