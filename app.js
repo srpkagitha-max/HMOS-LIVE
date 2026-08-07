@@ -9,10 +9,10 @@ import {
   submitStudentFeePaymentRequest, getInstituteBranding, saveInstituteBranding, saveAdmissionFeeSettings,
   createApprovalRequest, listApprovalRequests, decideApprovalRequest, createNotification, listNotifications, markNotificationRead, createAuditLog, listAuditLogs, softDeleteRecord, listRecycleBin, restoreDeletedRecord, createBackupSnapshot, listBackupSnapshots, exportInstituteBackup, restoreInstituteBackup, findDuplicateAdmissions,
   loginInstituteAdmin, changeInstituteAdminCredentials, checkAdmissionStatus, getSystemHealth, getInstituteLiveMetrics, reconcileResidentBedAssignments
-} from "./firebase-service.js?v=4.5.9";
+} from "./firebase-service.js?v=4.5.10";
 
 const app = document.querySelector("#app");
-const HMOS_VERSION = "4.5.9";
+const HMOS_VERSION = "4.5.10";
 window.__HMOS_VERSION__ = HMOS_VERSION;
 
 const activeOperations = new Set();
@@ -377,10 +377,90 @@ function renderAdmissionsHome(){
 async function renderKitchen(){
   const i=state.instituteSession;if(!i){state.screen="institute";return render();}
   const today=new Date().toISOString().slice(0,10);
-  app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page"><button id="kitchen-back" class="back">← Institute Home</button><div class="compact-heading"><span class="step">Food operations</span><h2>Kitchen</h2><p>Update today’s menu and review meal attendance.</p></div><form id="menu-form" class="compact-form">${field("menu-date","Menu Date","date","",today)}${field("menu-breakfast","Breakfast","text","Example: Idli, Sambar")}${field("menu-lunch","Lunch","text","Example: Rice, Dal, Curry")}${field("menu-dinner","Dinner","text","Example: Chapati, Curry")}${field("menu-snacks","Snacks / Special","text","Optional")}<p id="menu-message" class="form-message form-wide"></p><button class="primary form-wide" id="menu-save">Save Today Menu</button></form><div class="compact-section"><h3>Meal Attendance Today</h3><div id="meal-admin-summary" class="mini-stat-grid"><article><span>Breakfast</span><strong>—</strong></article><article><span>Lunch</span><strong>—</strong></article><article><span>Dinner</span><strong>—</strong></article><article><span>Night Present</span><strong>—</strong></article><article><span>Not Marked / Outside</span><strong>—</strong></article></div></div></section>`,true);
+  app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page"><button id="kitchen-back" class="back">← Institute Home</button><div class="compact-heading"><span class="step">Food operations</span><h2>Kitchen</h2><p>Update today’s menu and review meal attendance. Tap an attendance card to view resident names.</p></div><form id="menu-form" class="compact-form">${field("menu-date","Menu Date","date","",today)}${field("menu-breakfast","Breakfast","text","Example: Idli, Sambar")}${field("menu-lunch","Lunch","text","Example: Rice, Dal, Curry")}${field("menu-dinner","Dinner","text","Example: Chapati, Curry")}${field("menu-snacks","Snacks / Special","text","Optional")}<p id="menu-message" class="form-message form-wide"></p><button class="primary form-wide" id="menu-save">Save Today Menu</button></form><div class="compact-section"><h3>Meal Attendance Today</h3><div id="meal-admin-summary" class="mini-stat-grid attendance-admin-grid"><button type="button" data-attendance-type="breakfast"><span>Breakfast</span><strong>—</strong><small>Tap to view names</small></button><button type="button" data-attendance-type="lunch"><span>Lunch</span><strong>—</strong><small>Tap to view names</small></button><button type="button" data-attendance-type="dinner"><span>Dinner</span><strong>—</strong><small>Tap to view names</small></button><button type="button" data-attendance-type="night"><span>Night Present</span><strong>—</strong><small>Tap to view names</small></button><button type="button" class="wide-attendance-card" data-attendance-type="missing"><span>Not Marked / Outside</span><strong>—</strong><small>Tap to view names & status</small></button></div></div></section>`,true);
   document.querySelector("#kitchen-back").onclick=()=>{state.screen="admin-home";render();};
-  try{const menu=await getDailyMenu(i.instituteCode,today);if(menu){document.querySelector("#menu-breakfast").value=menu.breakfast||"";document.querySelector("#menu-lunch").value=menu.lunch||"";document.querySelector("#menu-dinner").value=menu.dinner||"";document.querySelector("#menu-snacks").value=menu.snacks||"";}const [rows,residents]=await Promise.all([listInstituteMealAttendance(i.instituteCode,today),listInstituteStudents(i.instituteCode)]);const counts={breakfast:0,lunch:0,dinner:0,night:0};rows.forEach(x=>{if(counts[x.meal]!==undefined)counts[x.meal]++;});const activeResidents=residents.filter(x=>(x.accountStatus||'active')==='active').length;const outsideOrNotMarked=Math.max(0,activeResidents-counts.night);document.querySelectorAll("#meal-admin-summary strong").forEach((el,n)=>el.textContent=[counts.breakfast,counts.lunch,counts.dinner,counts.night,outsideOrNotMarked][n]);}catch(err){console.warn(err);}
-  document.querySelector("#menu-form").onsubmit=async e=>{e.preventDefault();const b=document.querySelector("#menu-save"),msg=document.querySelector("#menu-message");b.disabled=true;b.textContent="Saving…";try{await saveDailyMenu({instituteCode:i.instituteCode,instituteId:i.instituteId,date:document.querySelector("#menu-date").value,breakfast:document.querySelector("#menu-breakfast").value,lunch:document.querySelector("#menu-lunch").value,dinner:document.querySelector("#menu-dinner").value,snacks:document.querySelector("#menu-snacks").value});msg.textContent="Menu saved successfully.";msg.className="form-message show success-message form-wide";}catch(err){msg.textContent=`Could not save menu. ${err.code||""}`;msg.className="form-message show error form-wide";}finally{b.disabled=false;b.textContent="Save Today Menu";}};
+
+  const mealLabel={breakfast:"Breakfast",lunch:"Lunch",dinner:"Dinner",night:"Night Present"};
+  const openAttendanceList=(type,rows,residents,movements)=>{
+    const active=residents.filter(x=>(x.accountStatus||"active")==="active");
+    const attendanceIds=new Set(rows.filter(x=>x.meal===type).map(x=>String(x.studentId||"")));
+    const outsideIds=new Set(movements.filter(x=>x.status==="outside").map(x=>String(x.studentId||"")));
+
+    let list=[];
+    let title="";
+    if(type==="missing"){
+      const nightIds=new Set(rows.filter(x=>x.meal==="night").map(x=>String(x.studentId||"")));
+      list=active.filter(r=>!nightIds.has(String(r.studentId||""))).map(r=>({
+        studentId:r.studentId,
+        studentName:r.studentName,
+        roomNumber:r.roomNumber||r.roomName||"",
+        bedNumber:r.bedNumber||"",
+        status:outsideIds.has(String(r.studentId||""))?"Outside":"Not Marked"
+      }));
+      title="Not Marked / Outside";
+    }else{
+      list=active.filter(r=>attendanceIds.has(String(r.studentId||""))).map(r=>({
+        studentId:r.studentId,
+        studentName:r.studentName,
+        roomNumber:r.roomNumber||r.roomName||"",
+        bedNumber:r.bedNumber||"",
+        status:"Present"
+      }));
+      title=mealLabel[type]||"Attendance";
+    }
+
+    const overlay=document.createElement("div");
+    overlay.className="attendance-list-overlay";
+    overlay.innerHTML=`<section class="attendance-list-sheet" role="dialog" aria-modal="true" aria-label="${esc(title)} attendance"><div class="attendance-list-head"><div><span class="step">Attendance list</span><h2>${esc(title)}</h2><p>${list.length} resident${list.length===1?"":"s"}</p></div><button type="button" class="attendance-list-close" aria-label="Close">×</button></div><div class="attendance-list-body">${list.map(r=>`<article class="attendance-resident-row"><div><strong>${esc(r.studentName||r.studentId||"Resident")}</strong><span>${esc(r.studentId||"")}</span><small>${r.roomNumber?`Room ${esc(r.roomNumber)}`:""}${r.bedNumber?` · Bed ${esc(r.bedNumber)}`:""}</small></div><span class="attendance-status ${r.status==="Outside"?"outside":r.status==="Not Marked"?"missing":"present"}">${esc(r.status)}</span></article>`).join("")||'<div class="empty-state compact-empty"><strong>No residents in this category.</strong></div>'}</div></section>`;
+    document.body.appendChild(overlay);
+    const close=()=>overlay.remove();
+    overlay.querySelector(".attendance-list-close").onclick=close;
+    overlay.onclick=e=>{if(e.target===overlay)close();};
+  };
+
+  try{
+    const menu=await getDailyMenu(i.instituteCode,today);
+    if(menu){
+      document.querySelector("#menu-breakfast").value=menu.breakfast||"";
+      document.querySelector("#menu-lunch").value=menu.lunch||"";
+      document.querySelector("#menu-dinner").value=menu.dinner||"";
+      document.querySelector("#menu-snacks").value=menu.snacks||"";
+    }
+    const [rows,residents,movements]=await Promise.all([
+      listInstituteMealAttendance(i.instituteCode,today),
+      listInstituteStudents(i.instituteCode),
+      listInstituteMovements(i.instituteCode)
+    ]);
+    const counts={breakfast:0,lunch:0,dinner:0,night:0};
+    rows.forEach(x=>{if(counts[x.meal]!==undefined)counts[x.meal]++;});
+    const activeResidents=residents.filter(x=>(x.accountStatus||"active")==="active").length;
+    const outsideOrNotMarked=Math.max(0,activeResidents-counts.night);
+
+    const values={breakfast:counts.breakfast,lunch:counts.lunch,dinner:counts.dinner,night:counts.night,missing:outsideOrNotMarked};
+    document.querySelectorAll("[data-attendance-type]").forEach(card=>{
+      const type=card.dataset.attendanceType;
+      const strong=card.querySelector("strong");
+      if(strong)strong.textContent=values[type]??0;
+      card.onclick=()=>openAttendanceList(type,rows,residents,movements);
+    });
+  }catch(err){
+    console.warn(err);
+    document.querySelector("#meal-admin-summary").insertAdjacentHTML("afterend",`<p class="form-message show error">${esc(humanError(err,"Could not load attendance."))}</p>`);
+  }
+
+  document.querySelector("#menu-form").onsubmit=async e=>{
+    e.preventDefault();
+    const b=document.querySelector("#menu-save"),msg=document.querySelector("#menu-message");
+    b.disabled=true;b.textContent="Saving…";
+    try{
+      await saveDailyMenu({instituteCode:i.instituteCode,instituteId:i.instituteId,date:document.querySelector("#menu-date").value,breakfast:document.querySelector("#menu-breakfast").value,lunch:document.querySelector("#menu-lunch").value,dinner:document.querySelector("#menu-dinner").value,snacks:document.querySelector("#menu-snacks").value});
+      msg.textContent="Menu saved successfully.";msg.className="form-message show success-message form-wide";
+    }catch(err){
+      msg.textContent=`Could not save menu. ${err.code||""}`;msg.className="form-message show error form-wide";
+    }finally{
+      b.disabled=false;b.textContent="Save Today Menu";
+    }
+  };
 }
 async function renderEntryExit(){
   const i=state.instituteSession;if(!i){state.screen="institute";return render();}

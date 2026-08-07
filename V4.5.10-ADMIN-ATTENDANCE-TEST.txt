@@ -1,0 +1,10 @@
+HMOS V4.5.10 ADMIN ATTENDANCE TEST
+
+1. Admin -> Kitchen.
+2. Tap Night Present.
+3. A resident-name list must open and show the student who marked attendance.
+4. Tap Breakfast / Lunch / Dinner to verify their corresponding lists.
+5. Tap Not Marked / Outside.
+6. Residents without Night Present must be listed.
+7. A resident who is currently outside must show status Outside.
+8. Other residents without Night Present must show Not Marked.

@@ -1,3 +1,11 @@
+# HMOS V4.5.10 — Admin Attendance Name Lists
+
+- Admin Kitchen attendance cards are now tappable.
+- Breakfast, Lunch, Dinner and Night Present open resident-name lists.
+- Not Marked / Outside opens residents who have not marked Night Present.
+- Residents currently outside are labelled Outside; others are labelled Not Marked.
+- Lists include Student ID and Room/Bed when available.
+
 # HMOS V4.5.9 — Student Attendance Open Fix
 
 - Restores the missing mealWindow helper that prevented the Student Attendance screen from rendering.
