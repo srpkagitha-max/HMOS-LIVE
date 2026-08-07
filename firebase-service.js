@@ -1061,6 +1061,81 @@ export async function findDuplicateAdmissions(input){const code=normalizeCode(in
 
 
 
+
+export async function reconcileResidentBedAssignments(instituteCodeValue) {
+  const instituteCode = normalizeCode(instituteCodeValue);
+  if (!instituteCode) throw Object.assign(new Error("Institute code missing"), { code: "institute-session-missing" });
+
+  const [studentsSnap, roomsSnap] = await Promise.all([
+    withTimeout(getDocs(query(collection(db, "students"), where("instituteCode", "==", instituteCode), limit(5000))), 15000, "student-bed-sync-timeout"),
+    withTimeout(getDocs(query(collection(db, "rooms"), where("instituteCode", "==", instituteCode), limit(1000))), 15000, "room-bed-sync-timeout")
+  ]);
+
+  const students = studentsSnap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(s => s.accountStatus === "active" && s.roomId && s.bedNumber);
+
+  const studentsByRoom = new Map();
+  for (const student of students) {
+    const key = String(student.roomId);
+    const rows = studentsByRoom.get(key) || [];
+    rows.push(student);
+    studentsByRoom.set(key, rows);
+  }
+
+  let repairedBeds = 0;
+  const conflicts = [];
+
+  for (const roomDoc of roomsSnap.docs) {
+    const roomStudents = studentsByRoom.get(String(roomDoc.id)) || [];
+    if (!roomStudents.length) continue;
+
+    const room = roomDoc.data();
+    const beds = Array.isArray(room.beds) ? room.beds.map(b => ({ ...b })) : [];
+    let changed = false;
+
+    for (const student of roomStudents) {
+      const bed = beds.find(b => String(b.bedNumber) === String(student.bedNumber));
+      if (!bed) {
+        conflicts.push({ studentId: student.studentId, roomId: roomDoc.id, bedNumber: student.bedNumber, reason: "bed-not-found" });
+        continue;
+      }
+
+      const currentStudentId = normalizeCode(bed.studentId);
+      const sameStudent = currentStudentId && currentStudentId === normalizeCode(student.studentId);
+      const occupiedByOther = bed.status === "occupied" && currentStudentId && !sameStudent;
+      const reservedForOtherName =
+        bed.status === "reserved" &&
+        cleanText(bed.studentName) &&
+        cleanText(bed.studentName).toLowerCase() !== cleanText(student.studentName).toLowerCase();
+
+      if (occupiedByOther || reservedForOtherName) {
+        conflicts.push({ studentId: student.studentId, roomId: roomDoc.id, bedNumber: student.bedNumber, reason: occupiedByOther ? "occupied-by-other" : "reserved-for-other" });
+        continue;
+      }
+
+      if (bed.status !== "occupied" || !sameStudent || cleanText(bed.studentName) !== cleanText(student.studentName)) {
+        bed.status = "occupied";
+        bed.studentId = normalizeCode(student.studentId);
+        bed.studentName = cleanText(student.studentName);
+        delete bed.pendingAdmissionId;
+        repairedBeds += 1;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      await withTimeout(updateDoc(roomDoc.ref, {
+        beds,
+        occupiedBeds: beds.filter(b => b.status === "occupied").length,
+        updatedAt: serverTimestamp()
+      }), 12000, "room-bed-repair-timeout");
+    }
+  }
+
+  return { repairedBeds, conflicts };
+}
+
 export async function getInstituteLiveMetrics(instituteCodeValue) {
   const instituteCode = normalizeCode(instituteCodeValue);
   if (!instituteCode) throw Object.assign(new Error("Institute code missing"), { code: "institute-session-missing" });

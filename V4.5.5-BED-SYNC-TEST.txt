@@ -1,0 +1,10 @@
+HMOS V4.5.5 BED SYNC TEST
+
+After upload:
+1. Wait for GitHub Pages deployment to turn green.
+2. Open the live site and reload once.
+3. Login as Admin -> Beds.
+4. Opening Beds runs a conservative reconciliation.
+5. Expected current data: Tirupatamma should show as Occupied on Bed 10 if her resident record still contains Room 101 / Bed 10.
+6. Room occupied count should become 3 and vacant beds should become 7 if there are 10 visible beds and no other status changes.
+7. Existing occupied beds must remain unchanged.

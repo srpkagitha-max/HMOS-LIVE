@@ -8,11 +8,11 @@ import {
   submitComplaint, listStudentComplaints, listInstituteComplaints, updateComplaintStatus,
   submitStudentFeePaymentRequest, getInstituteBranding, saveInstituteBranding, saveAdmissionFeeSettings,
   createApprovalRequest, listApprovalRequests, decideApprovalRequest, createNotification, listNotifications, markNotificationRead, createAuditLog, listAuditLogs, softDeleteRecord, listRecycleBin, restoreDeletedRecord, createBackupSnapshot, listBackupSnapshots, exportInstituteBackup, restoreInstituteBackup, findDuplicateAdmissions,
-  loginInstituteAdmin, changeInstituteAdminCredentials, checkAdmissionStatus, getSystemHealth, getInstituteLiveMetrics
-} from "./firebase-service.js?v=4.5.4";
+  loginInstituteAdmin, changeInstituteAdminCredentials, checkAdmissionStatus, getSystemHealth, getInstituteLiveMetrics, reconcileResidentBedAssignments
+} from "./firebase-service.js?v=4.5.5";
 
 const app = document.querySelector("#app");
-const HMOS_VERSION = "4.5.4";
+const HMOS_VERSION = "4.5.5";
 window.__HMOS_VERSION__ = HMOS_VERSION;
 
 const activeOperations = new Set();
@@ -728,7 +728,16 @@ async function renderRoomManagement(){
   document.querySelector("#room-back-portal").onclick=()=>{state.screen="admin-home";render();};
   document.querySelector("#open-create-room").onclick=()=>openModal({title:"Create Room",eyebrow:"Room setup",content:`<form id="create-room-form" class="form-grid">${field("room-building","Building","text","Main Building")}${field("room-floor","Floor","text","Ground Floor")}${field("room-number","Room Number","text","Example: 101")}<label class="field"><span>Room Type</span><select id="room-type"><option>Non-AC</option><option>AC</option><option>Dormitory</option></select></label>${field("room-capacity","Bed Capacity","number","4","4","min='1' max='50'")}<p id="modal-message" class="form-message form-wide"></p><button id="create-room-save" class="primary form-wide">Create Room</button></form>`,onReady(){document.querySelector("#create-room-form").onsubmit=async e=>{e.preventDefault();const b=document.querySelector("#create-room-save");setActionBusy(b,true,"Creating…");try{await createRoom({building:document.querySelector("#room-building").value,floor:document.querySelector("#room-floor").value,roomNumber:document.querySelector("#room-number").value,roomType:document.querySelector("#room-type").value,capacity:document.querySelector("#room-capacity").value},i);closeModal();return renderRoomManagement();}catch(err){modalMessage(err.code==="room-exists"?"This room number already exists.":`Could not create room. ${err.code||""}`);setActionBusy(b,false);}};}});
   try{
+    const bedSync = await reconcileResidentBedAssignments(i.instituteCode).catch(err => {
+      console.warn("Bed reconciliation skipped:", err);
+      return { repairedBeds: 0, conflicts: [] };
+    });
     [state.rooms,state.adminStudents,state.fees]=await Promise.all([listInstituteRooms(i.instituteCode),listInstituteStudents(i.instituteCode),listInstituteFees(i.instituteCode)]);
+    if (bedSync.repairedBeds > 0) {
+      const m=document.querySelector("#room-message");
+      m.textContent=`Bed records repaired: ${bedSync.repairedBeds}.`;
+      m.className="form-message show success-message";
+    }
     const floors=[...new Set(state.rooms.map(floorKey))];
     if(!state.selectedFloor||!floors.includes(state.selectedFloor))state.selectedFloor=floors[0]||"";
     const visibleTotal=state.rooms.reduce((n,r)=>n+visibleBedsCount(r),0),vacant=state.rooms.reduce((n,r)=>n+availableBedsCount(r),0);

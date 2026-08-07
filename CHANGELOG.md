@@ -1,3 +1,11 @@
+# HMOS V4.5.5 — Bed Allotment Sync Patch
+
+- Adds a conservative room/bed reconciliation when Admin opens Beds.
+- Active resident Room/Bed data repairs stale Reserved/Vacant bed cards to Occupied.
+- Does not overwrite a bed already occupied by another resident.
+- Does not overwrite a reserved bed when its resident name belongs to somebody else.
+- Recalculates occupied bed count after repair.
+
 # HMOS Changelog
 
 ## 4.5.4 – Backup & Recovery V2
