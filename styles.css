@@ -519,3 +519,52 @@ html,body{max-width:100%;overflow-x:hidden}
   .pwa-install-button{left:auto!important;right:max(10px,env(safe-area-inset-right))!important;transform:none!important;bottom:max(10px,calc(env(safe-area-inset-bottom) + 8px))!important;min-height:42px!important;padding:0 13px!important;font-size:13px!important;box-shadow:0 8px 20px rgba(4,37,72,.22)!important;opacity:.94}
   body{padding-bottom:max(62px,calc(env(safe-area-inset-bottom) + 54px))}
 }
+
+
+/* HMOS V4.5.24 — responsive desktop + 3 dashboard appearance modes */
+.dashboard-theme-custom{font-size:calc(16px * var(--dashboard-font-scale,1))}
+.dashboard-theme-custom .card,.dashboard-theme-custom .portal-card,.dashboard-theme-custom .dashboard-card,.dashboard-theme-custom .login-card,.dashboard-theme-custom .admission-card{border-radius:var(--dashboard-card-radius,24px)}
+.dashboard-theme-hmos{--brand-primary:#0b4f8a!important;--brand-secondary:#16866b!important}
+.dashboard-theme-institute{--brand-primary:#0b4f8a!important;--brand-secondary:#16866b!important}
+.hmos-mini-label{margin:0 0 3px;font-size:11px;font-weight:900;letter-spacing:.22em;color:rgba(255,255,255,.78)}
+.dashboard-mode-choice{display:flex;gap:11px;align-items:flex-start;padding:15px;border:1px solid #d7e2eb;border-radius:16px;background:#f8fbfd;cursor:pointer}
+.dashboard-mode-choice input{margin-top:4px;accent-color:var(--brand-primary,#0b4f8a)}
+.dashboard-mode-choice span,.dashboard-mode-choice strong,.dashboard-mode-choice small{display:block}
+.dashboard-mode-choice strong{font-size:15px;color:#102642}
+.dashboard-mode-choice small{font-size:11px;line-height:1.35;color:#667789;margin-top:4px}
+.dashboard-mode-choice:has(input:checked){border-color:var(--brand-primary,#0b4f8a);box-shadow:0 0 0 2px color-mix(in srgb,var(--brand-primary,#0b4f8a),transparent 84%)}
+.dashboard-mode-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0 20px}
+.custom-theme-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}
+.preview-hmos{display:none;font-size:10px!important;font-weight:900!important;letter-spacing:.18em!important;color:#0b4f8a!important;margin-bottom:4px!important}
+
+@media(min-width:900px){
+  html,body,#app{min-width:0}
+  .shell{min-height:100vh}
+  .shell .hero{min-height:360px;padding:52px max(5vw,40px) 150px}
+  .shell .brand{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:24px}
+  .shell .brand h1{font-size:clamp(42px,4vw,64px);line-height:1.02}
+  .shell .brand .tagline{font-size:19px;max-width:700px}
+  .shell .trust-row{max-width:1180px;margin:26px auto 0}
+  .desktop-content-wrap{width:min(1180px,calc(100% - 64px));margin:0 auto}
+  .desktop-content-wrap>.card,.desktop-content-wrap>.portal-card,.desktop-content-wrap>.dashboard-card,.desktop-content-wrap>.login-card,.desktop-content-wrap>.admission-card{width:100%;max-width:none;margin:-92px auto 34px}
+  .wide-card{max-width:none!important}
+  .dashboard-card,.portal-card{padding:34px!important}
+  .gateway-card{max-width:900px!important;margin-left:auto!important;margin-right:auto!important}
+  .admin-home-grid,.neat-admin-grid,.student-home-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .admin-home-grid.compact-dashboard{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .compact-report-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .metric-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .live-metrics-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .form-grid,.compact-form{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:18px}
+  .dashboard-mode-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  footer{padding:8px 0 34px}
+}
+@media(min-width:1280px){
+  .desktop-content-wrap{width:min(1320px,calc(100% - 96px))}
+  .shell .brand,.shell .trust-row{max-width:1320px}
+  .admin-home-grid,.neat-admin-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+}
+@media(max-width:700px){
+  .dashboard-mode-grid{grid-template-columns:1fr}
+  .custom-theme-fields{grid-template-columns:1fr}
+}

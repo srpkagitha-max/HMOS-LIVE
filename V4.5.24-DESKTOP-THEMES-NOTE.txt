@@ -1,0 +1,17 @@
+HMOS V4.5.24 — Desktop Responsive + Dashboard Appearance Modes
+
+1. Desktop/laptop responsive layout:
+   - wide centered content
+   - larger brand/header
+   - 3–4 column dashboard grids
+   - forms use desktop columns
+   - mobile layout remains unchanged
+
+2. Dashboard Settings now offers 3 appearance modes:
+   A. HMOS Default — original HMOS identity and standard colours
+   B. Institute Branded — HMOS design/colours/fonts/shapes, institute identity, small HMOS label
+   C. Fully Custom — institute identity plus editable primary/secondary colours, font scale and card roundness
+
+3. Existing branding defaults to Custom so current institute look is preserved after update.
+4. Settings are stored in instituteBranding and work across devices after login.
+5. Cache/version bumped to 4.5.24.

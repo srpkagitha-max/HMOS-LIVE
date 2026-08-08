@@ -9,10 +9,10 @@ import {
   submitStudentFeePaymentRequest, getInstituteBranding, saveInstituteBranding, saveAdmissionFeeSettings,
   createApprovalRequest, listApprovalRequests, decideApprovalRequest, createNotification, listNotifications, markNotificationRead, createAuditLog, listAuditLogs, softDeleteRecord, listRecycleBin, restoreDeletedRecord, createBackupSnapshot, listBackupSnapshots, exportInstituteBackup, restoreInstituteBackup, findDuplicateAdmissions,
   loginInstituteAdmin, changeInstituteAdminCredentials, checkAdmissionStatus, getSystemHealth, getInstituteLiveMetrics, reconcileResidentBedAssignments
-} from "./firebase-service.js?v=4.5.23";
+} from "./firebase-service.js?v=4.5.24";
 
 const app = document.querySelector("#app");
-const HMOS_VERSION = "4.5.23";
+const HMOS_VERSION = "4.5.24";
 window.__HMOS_VERSION__ = HMOS_VERSION;
 
 const activeOperations = new Set();
@@ -127,15 +127,33 @@ function restoreInstituteSession(){
 function clearInstituteSession(){ try{localStorage.removeItem(INSTITUTE_SESSION_KEY);sessionStorage.removeItem(INSTITUTE_SESSION_KEY);}catch{} }
 
 
-function brand(){
-  const b=state.branding;
-  if(b&&state.instituteSession){
-    const logo=b.logoUrl?`<img class="institute-brand-logo" src="${esc(b.logoUrl)}" alt="${esc(b.instituteName||state.instituteSession.instituteName)} logo">`:`<div class="institute-brand-letter">${esc((b.instituteName||state.instituteSession.instituteName||"I")[0].toUpperCase())}</div>`;
-    return `<div class="brand institute-brand" style="--brand-primary:${esc(b.primaryColor||'#0b4f8a')};--brand-secondary:${esc(b.secondaryColor||'#16866b')}">${logo}<div><p class="eyebrow">${esc(b.shortName||'INSTITUTE')}</p><h1>${esc(b.instituteName||state.instituteSession.instituteName)}</h1><p class="tagline">${esc(b.welcomeMessage||state.instituteSession.address||'Powered by HMOS')}</p></div></div>`;
-  }
-  return `<div class="brand"><div class="brand-mark"><span class="roof"></span><span class="door"></span><span class="shield">✓</span></div><div><p class="eyebrow">HMOS</p><h1>Hostel Management<br class="mobile-break"/> Operating System</h1><p class="tagline">Smart Multi-Institute Hostel Management Platform</p></div></div>`;
+
+function dashboardTheme(){
+  const b=state.branding||{};
+  const mode=b.dashboardMode||"custom";
+  const custom=mode==="custom";
+  return {
+    mode,
+    primary:custom?(b.primaryColor||"#0b4f8a"):"#0b4f8a",
+    secondary:custom?(b.secondaryColor||"#16866b"):"#16866b",
+    fontScale:custom?Math.min(1.3,Math.max(.85,Number(b.fontScale||1))):1,
+    cardRadius:custom?Math.min(40,Math.max(12,Number(b.cardRadius||24))):24
+  };
 }
-function shell(content,compact=false){const style=state.branding&&state.instituteSession?` style="--brand-primary:${esc(state.branding.primaryColor||'#0b4f8a')};--brand-secondary:${esc(state.branding.secondaryColor||'#16866b')}"`:'';return `<main class="shell ${compact?"shell-compact":""}"${style}><section class="hero">${brand()}<div class="trust-row"><span>Secure access</span><span>Multi-institute</span><span>Mobile ready</span></div></section>${content}<footer>Powered by <strong>Hostel Management Operating System</strong></footer></main>`;}
+function brand(){
+  const b=state.branding, i=state.instituteSession, t=dashboardTheme();
+  if(t.mode==="hmos" || !b || !i){
+    return `<div class="brand"><div class="brand-mark"><span class="roof"></span><span class="door"></span><span class="shield">✓</span></div><div><p class="eyebrow">HMOS</p><h1>Hostel Management<br class="mobile-break"/> Operating System</h1><p class="tagline">Smart Multi-Institute Hostel Management Platform</p></div></div>`;
+  }
+  const logo=b.logoUrl?`<img class="institute-brand-logo" src="${esc(b.logoUrl)}" alt="${esc(b.instituteName||i.instituteName)} logo">`:`<div class="institute-brand-letter">${esc((b.instituteName||i.instituteName||"I")[0].toUpperCase())}</div>`;
+  const hmos=t.mode==="institute"?`<p class="hmos-mini-label">HMOS</p>`:"";
+  return `<div class="brand institute-brand dashboard-mode-${esc(t.mode)}">${logo}<div>${hmos}<p class="eyebrow">${esc(b.shortName||i.instituteCode||'INSTITUTE')}</p><h1>${esc(b.instituteName||i.instituteName)}</h1><p class="tagline">${esc(b.welcomeMessage||i.address||'Powered by HMOS')}</p></div></div>`;
+}
+function shell(content,compact=false){
+  const t=dashboardTheme();
+  const style=` style="--brand-primary:${esc(t.primary)};--brand-secondary:${esc(t.secondary)};--dashboard-font-scale:${t.fontScale};--dashboard-card-radius:${t.cardRadius}px"`;
+  return `<main class="shell ${compact?"shell-compact":""} dashboard-theme-${esc(t.mode)}"${style}><section class="hero">${brand()}<div class="trust-row"><span>Secure access</span><span>Multi-institute</span><span>Mobile ready</span></div></section><div class="desktop-content-wrap">${content}</div><footer>Powered by <strong>Hostel Management Operating System</strong></footer></main>`;
+}
 function field(id,label,type="text",placeholder="",value="",extra=""){return `<label class="field" for="${id}"><span>${label}</span><input id="${id}" type="${type}" placeholder="${placeholder}" value="${esc(value)}" ${extra}/></label>`;}
 function notify(message,type="success-message"){state.notice={message,type};}
 function consumeNotice(){const n=state.notice; state.notice=null; return n;}
@@ -441,13 +459,74 @@ function renderAdmissionFeeSettings(){
 function renderDashboardSettings(){
   const i=state.instituteSession;if(!i){state.screen="institute";return render();}
   const b=state.branding||{};
-  app.innerHTML=shell(`<section class="card dashboard-card wide-card"><button id="branding-back" class="back">← Institute Home</button><div class="card-heading"><span class="step">Dashboard customisation</span><h2>Dashboard Settings</h2><p>Choose the institute identity shown after institute login.</p></div><form id="branding-form" class="form-grid">${field("brand-name","Institute Name","text","Institute name",b.instituteName||i.instituteName)}${field("brand-short","Short Name","text","Example: KSR",b.shortName||i.instituteCode)}${field("brand-logo","Logo Image URL","url","https://.../logo.png",b.logoUrl||"")}${field("brand-primary","Primary Colour","color","",b.primaryColor||"#0b4f8a")}${field("brand-secondary","Secondary Colour","color","",b.secondaryColor||"#16866b")}${field("brand-contact","Contact Number","tel","10-digit number",b.contactNumber||i.ownerPhone||"")}<label class="field form-wide"><span>Welcome Message</span><textarea id="brand-message" placeholder="Welcome to our institute">${esc(b.welcomeMessage||"")}</textarea></label><div class="branding-preview form-wide" id="branding-preview"><strong>${esc(b.instituteName||i.instituteName)}</strong><span>${esc(b.welcomeMessage||"Institute dashboard powered by HMOS")}</span></div><p id="branding-message" class="form-message form-wide"></p><button class="primary form-wide" id="branding-save">Save Dashboard</button></form></section>`,true);
+  const mode=b.dashboardMode||"custom";
+  const modeCard=(value,title,desc)=>`<label class="dashboard-mode-choice"><input type="radio" name="dashboard-mode" value="${value}" ${mode===value?"checked":""}><span><strong>${title}</strong><small>${desc}</small></span></label>`;
+  app.innerHTML=shell(`<section class="card dashboard-card wide-card"><button id="branding-back" class="back">← Institute Home</button><div class="card-heading"><span class="step">Dashboard customisation</span><h2>Dashboard Settings</h2><p>Choose a ready-made HMOS style or fully customise the institute dashboard.</p></div>
+  <div class="dashboard-mode-grid form-wide">
+    ${modeCard("hmos","1 · HMOS Default","Keep the original HMOS dashboard identity and standard blue design.")}
+    ${modeCard("institute","2 · Institute Branded","Keep HMOS colours, font sizes and shapes, but show institute identity with a small HMOS label.")}
+    ${modeCard("custom","3 · Fully Custom","Institute admin controls identity, colours, text scale and card shape.")}
+  </div>
+  <form id="branding-form" class="form-grid">
+    ${field("brand-name","Institute Name","text","Institute name",b.instituteName||i.instituteName)}
+    ${field("brand-short","Short Name","text","Example: KSR",b.shortName||i.instituteCode)}
+    ${field("brand-logo","Logo Image URL","url","https://.../logo.png",b.logoUrl||"")}
+    ${field("brand-contact","Contact Number","tel","10-digit number",b.contactNumber||i.ownerPhone||"")}
+    <label class="field form-wide"><span>Welcome Message</span><textarea id="brand-message" placeholder="Welcome to our institute">${esc(b.welcomeMessage||"")}</textarea></label>
+    <div id="custom-theme-fields" class="custom-theme-fields form-wide">
+      ${field("brand-primary","Primary Colour","color","",b.primaryColor||"#0b4f8a")}
+      ${field("brand-secondary","Secondary Colour","color","",b.secondaryColor||"#16866b")}
+      <label class="field"><span>Font Size Scale</span><select id="brand-font-scale">
+        ${[["0.90","Compact"],["1","Standard"],["1.10","Large"],["1.20","Extra Large"]].map(([v,l])=>`<option value="${v}" ${String(b.fontScale||1)===v?"selected":""}>${l}</option>`).join("")}
+      </select></label>
+      <label class="field"><span>Card Shape</span><select id="brand-card-radius">
+        ${[["16","Sharper"],["24","HMOS Standard"],["32","Rounded"],["40","Very Rounded"]].map(([v,l])=>`<option value="${v}" ${String(b.cardRadius||24)===v?"selected":""}>${l}</option>`).join("")}
+      </select></label>
+    </div>
+    <div class="branding-preview form-wide" id="branding-preview"><span class="preview-hmos">HMOS</span><strong>${esc(b.instituteName||i.instituteName)}</strong><span>${esc(b.welcomeMessage||"Institute dashboard powered by HMOS")}</span></div>
+    <p id="branding-message" class="form-message form-wide"></p><button class="primary form-wide" id="branding-save">Save Dashboard</button>
+  </form></section>`,true);
   document.querySelector('#branding-back').onclick=()=>{state.screen='admin-home';render();};
-  const refresh=()=>{const x=document.querySelector('#branding-preview');x.style.borderColor=document.querySelector('#brand-primary').value;x.querySelector('strong').textContent=document.querySelector('#brand-name').value||i.instituteName;x.querySelector('span').textContent=document.querySelector('#brand-message').value||'Institute dashboard powered by HMOS';};
-  ['brand-name','brand-primary','brand-secondary','brand-message'].forEach(id=>document.querySelector('#'+id).oninput=refresh);
-  document.querySelector('#branding-form').onsubmit=async e=>{e.preventDefault();const btn=document.querySelector('#branding-save'),msg=document.querySelector('#branding-message');btn.disabled=true;btn.textContent='Saving…';try{state.branding=await saveInstituteBranding({instituteCode:i.instituteCode,instituteId:i.instituteId,instituteName:document.querySelector('#brand-name').value,shortName:document.querySelector('#brand-short').value,logoUrl:document.querySelector('#brand-logo').value,primaryColor:document.querySelector('#brand-primary').value,secondaryColor:document.querySelector('#brand-secondary').value,contactNumber:document.querySelector('#brand-contact').value,upiId:b.upiId||i.upiId||"",defaultTotalFees:b.defaultTotalFees||i.defaultTotalFees||0,welcomeMessage:document.querySelector('#brand-message').value});state.instituteSession={...state.instituteSession,instituteName:state.branding.instituteName,upiId:state.branding.upiId,branding:state.branding};saveInstituteSession(state.instituteSession,true);msg.textContent='Dashboard saved successfully.';msg.className='form-message show success-message form-wide';setTimeout(()=>{state.screen='institute-portal';render();},700);}catch(err){msg.textContent=`Could not save dashboard. ${err.code||''}`;msg.className='form-message show error form-wide';btn.disabled=false;btn.textContent='Save Dashboard';}};
+  const modeValue=()=>document.querySelector('input[name="dashboard-mode"]:checked')?.value||"custom";
+  const customFields=document.querySelector('#custom-theme-fields');
+  const refresh=()=>{
+    const selected=modeValue(),x=document.querySelector('#branding-preview');
+    customFields.hidden=selected!=="custom";
+    const primary=selected==="custom"?document.querySelector('#brand-primary').value:"#0b4f8a";
+    const secondary=selected==="custom"?document.querySelector('#brand-secondary').value:"#16866b";
+    x.style.borderColor=primary;x.style.background=`linear-gradient(145deg,${primary}12,${secondary}12)`;
+    x.style.borderRadius=`${selected==="custom"?document.querySelector('#brand-card-radius').value:24}px`;
+    x.style.fontSize=`${selected==="custom"?document.querySelector('#brand-font-scale').value:1}em`;
+    x.querySelector('strong').textContent=selected==="hmos"?"Hostel Management Operating System":(document.querySelector('#brand-name').value||i.instituteName);
+    x.querySelector('.preview-hmos').style.display=selected==="institute"?"block":"none";
+    x.querySelector('span:last-child').textContent=document.querySelector('#brand-message').value||'Institute dashboard powered by HMOS';
+  };
+  document.querySelectorAll('input[name="dashboard-mode"]').forEach(el=>el.onchange=refresh);
+  ['brand-name','brand-primary','brand-secondary','brand-message','brand-font-scale','brand-card-radius'].forEach(id=>{const el=document.querySelector('#'+id);if(el)el.oninput=refresh;});
+  refresh();
+  document.querySelector('#branding-form').onsubmit=async e=>{
+    e.preventDefault();const btn=document.querySelector('#branding-save'),msg=document.querySelector('#branding-message'),selected=modeValue();
+    btn.disabled=true;btn.textContent='Saving…';
+    try{
+      state.branding=await saveInstituteBranding({
+        instituteCode:i.instituteCode,instituteId:i.instituteId,
+        instituteName:document.querySelector('#brand-name').value,shortName:document.querySelector('#brand-short').value,
+        logoUrl:document.querySelector('#brand-logo').value,
+        primaryColor:document.querySelector('#brand-primary').value,secondaryColor:document.querySelector('#brand-secondary').value,
+        contactNumber:document.querySelector('#brand-contact').value,upiId:b.upiId||i.upiId||"",
+        defaultTotalFees:b.defaultTotalFees||i.defaultTotalFees||0,welcomeMessage:document.querySelector('#brand-message').value,
+        dashboardMode:selected,fontScale:Number(document.querySelector('#brand-font-scale').value||1),
+        cardRadius:Number(document.querySelector('#brand-card-radius').value||24)
+      });
+      state.instituteSession={...state.instituteSession,instituteName:state.branding.instituteName,upiId:state.branding.upiId,branding:state.branding};
+      saveInstituteSession(state.instituteSession,true);
+      msg.textContent='Dashboard saved successfully.';msg.className='form-message show success-message form-wide';
+      setTimeout(()=>{state.screen='institute-portal';render();},700);
+    }catch(err){
+      msg.textContent=`Could not save dashboard. ${humanError(err,err.code||'Unknown error')}`;msg.className='form-message show error form-wide';
+    }finally{btn.disabled=false;btn.textContent='Save Dashboard';}
+  };
 }
-
 function renderAdmissionsHome(){
   const i=state.instituteSession;if(!i){state.screen="institute";return render();}
   const link=`${location.origin}${location.pathname}`;
