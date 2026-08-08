@@ -675,3 +675,11 @@ input[readonly]{
 .admission-primary-step .form-help{margin:4px 0 14px;color:#6b7b8c;line-height:1.45}
 .selected-bed{font-weight:700;color:#17324f;margin-top:12px}
 .room-fee-summary{margin-top:10px}
+
+
+/* HMOS V4.5.32 — One Work, One Feature simplification */
+.admin-home-grid.neat-admin-grid{align-items:stretch}
+.admin-home-tile small{line-height:1.35}
+@media(max-width:700px){
+  .admin-home-grid.neat-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}

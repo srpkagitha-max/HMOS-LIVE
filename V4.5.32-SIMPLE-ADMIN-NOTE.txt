@@ -1,0 +1,20 @@
+HMOS V4.5.32 — One Work, One Feature
+
+Admin simplification:
+- Removes duplicate Approvals entry from Admin Home.
+- Removes Notifications as a main work-module card.
+- Consolidates Audit Logs, Recycle Bin, Backup & Restore and System Health under System & Safety.
+- Renames PDFs to Reports.
+- Renames Beds display to Rooms & Beds where applicable.
+- Removes New Admission shortcut from Residents so admission work stays in Admissions.
+- Keeps underlying functions/routes intact to reduce regression risk.
+- Resident home no longer treats Notifications as a core work module.
+
+Design rule:
+Home = daily work
+Notifications = alerts
+Reports = output
+Settings = configuration
+System & Safety = maintenance
+
+No Firestore schema/rules change is required for this UI/navigation patch.

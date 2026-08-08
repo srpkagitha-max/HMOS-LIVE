@@ -9,10 +9,10 @@ import {
   submitStudentFeePaymentRequest, getInstituteBranding, saveInstituteBranding, saveAdmissionFeeSettings,
   createApprovalRequest, listApprovalRequests, decideApprovalRequest, createNotification, listNotifications, markNotificationRead, createAuditLog, listAuditLogs, softDeleteRecord, listRecycleBin, restoreDeletedRecord, createBackupSnapshot, listBackupSnapshots, exportInstituteBackup, restoreInstituteBackup, findDuplicateAdmissions,
   loginInstituteAdmin, changeInstituteAdminCredentials, checkAdmissionStatus, getSystemHealth, getInstituteLiveMetrics, reconcileResidentBedAssignments
-} from "./firebase-service.js?v=4.5.31";
+} from "./firebase-service.js?v=4.5.32";
 
 const app = document.querySelector("#app");
-const HMOS_VERSION = "4.5.31";
+const HMOS_VERSION = "4.5.32";
 window.__HMOS_VERSION__ = HMOS_VERSION;
 
 const activeOperations = new Set();
@@ -316,7 +316,7 @@ function renderInstituteAdminHome(){
     <div class="admin-home-grid neat-admin-grid">
       <button id="residents-card" class="admin-home-action"><strong>Residents</strong><small>Profiles & search</small></button>
       <button id="admissions-card" class="admin-home-action"><strong>Admissions</strong><small>Forms & approvals</small></button>
-      <button id="beds-card" class="admin-home-action"><strong>Beds</strong><small>Floors, rooms & beds</small></button>
+      <button id="beds-card" class="admin-home-action"><strong>Rooms & Beds</strong><small>Floors, rooms & beds</small></button>
       <button id="kitchen-card" class="admin-home-action"><strong>Kitchen</strong><small>Menu & attendance</small></button>
       <button id="fees-card" class="admin-home-action"><strong>Fees</strong><small>Payments & receipts</small></button>
       <button id="entry-exit-card" class="admin-home-action"><strong>Entry / Exit</strong><small>Movement status</small></button>
@@ -328,7 +328,7 @@ function renderInstituteAdminHome(){
       <button id="backup-card" class="admin-home-action"><strong>Backup & Restore</strong><small>Daily snapshot history</small></button>
       <button id="system-health-card" class="admin-home-action"><strong>System Health</strong><small>Network, Firebase and backup status</small></button>
       <button id="settings-card" class="admin-home-action"><strong>Settings</strong><small>Dashboard and admission fees</small></button>
-      <button id="pdf-card" class="admin-home-action"><strong>PDF's</strong><small>Reports & lists</small></button>
+      <button id="pdf-card" class="admin-home-action"><strong>Reports</strong><small>Reports & lists</small></button>
     </div>
   </section>`,true);
 
@@ -373,6 +373,19 @@ function renderInstituteAdminHome(){
   document.querySelector("#live-metrics-refresh").onclick=paintLiveMetrics;
   paintLiveMetrics();
   refreshAdminBadges();
+}
+
+
+function renderSystemSafety(){
+  const i=state.instituteSession;if(!i){state.screen="institute";return render();}
+  app.innerHTML=shell(`<section class="card dashboard-card wide-card"><button id="system-safety-back" class="back">← Admin Home</button><div class="card-heading"><span class="step">Maintenance</span><h2>System & Safety</h2><p>Audit history, deleted records, backups and system checks in one place.</p></div><div class="admin-home-grid neat-admin-grid">
+    <button class="admin-home-tile" data-system-target="audit-logs"><span class="admin-home-icon">🧾</span><strong>Audit History</strong><small>Review important admin activity.</small></button>
+    <button class="admin-home-tile" data-system-target="recycle-bin"><span class="admin-home-icon">♻️</span><strong>Recycle Bin</strong><small>Review and restore deleted records.</small></button>
+    <button class="admin-home-tile" data-system-target="backup-restore"><span class="admin-home-icon">💾</span><strong>Backup & Restore</strong><small>Create and manage recovery copies.</small></button>
+    <button class="admin-home-tile" data-system-target="system-health"><span class="admin-home-icon">🛡️</span><strong>System Health</strong><small>Check app and data-service status.</small></button>
+  </div></section>`,true);
+  document.querySelector("#system-safety-back").onclick=()=>{state.screen="admin-home";render();};
+  document.querySelectorAll("[data-system-target]").forEach(b=>b.onclick=()=>{state.screen=b.dataset.systemTarget;render();});
 }
 
 function renderSettingsHome(){
@@ -1618,7 +1631,7 @@ function roomCards(rooms=state.rooms){
 }
 async function renderRoomManagement(){
   const i=state.instituteSession;if(!i){state.screen="institute";return render();}
-  app.innerHTML=shell(`<section class="card dashboard-card wide-card"><div class="dashboard-head"><div><span class="step success-step">Hostel operations</span><h2>Beds</h2><p>${esc(i.instituteName)} · ${esc(i.instituteCode)}</p></div><button id="room-back-portal" class="secondary">Institute Portal</button></div><div class="metric-grid"><article><span>Total Rooms</span><strong id="room-total">—</strong><small>Active rooms</small></article><article><span>Visible Beds</span><strong id="bed-total">—</strong><small>Shown for allotment</small></article><article><span>Vacant Beds</span><strong id="bed-vacant">—</strong><small>Ready to allot</small></article></div><div class="section-title"><div><h3>Select Floor</h3><p>Select a floor, room and bed.</p></div><button id="open-create-room" class="primary compact-primary">+ Create Room</button></div><div id="floor-tabs" class="floor-tabs"></div><p id="room-message" class="form-message"></p><div id="room-results"><div class="loading-card"><div class="loader"></div><p>Loading rooms…</p></div></div></section>`,true);
+  app.innerHTML=shell(`<section class="card dashboard-card wide-card"><div class="dashboard-head"><div><span class="step success-step">Hostel operations</span><h2>Rooms & Beds</h2><p>${esc(i.instituteName)} · ${esc(i.instituteCode)}</p></div><button id="room-back-portal" class="secondary">Institute Portal</button></div><div class="metric-grid"><article><span>Total Rooms</span><strong id="room-total">—</strong><small>Active rooms</small></article><article><span>Visible Beds</span><strong id="bed-total">—</strong><small>Shown for allotment</small></article><article><span>Vacant Beds</span><strong id="bed-vacant">—</strong><small>Ready to allot</small></article></div><div class="section-title"><div><h3>Select Floor</h3><p>Select a floor, room and bed.</p></div><button id="open-create-room" class="primary compact-primary">+ Create Room</button></div><div id="floor-tabs" class="floor-tabs"></div><p id="room-message" class="form-message"></p><div id="room-results"><div class="loading-card"><div class="loader"></div><p>Loading rooms…</p></div></div></section>`,true);
   document.querySelector("#room-back-portal").onclick=()=>{state.screen="admin-home";render();};
   document.querySelector("#open-create-room").onclick=()=>openModal({title:"Create Room",eyebrow:"Room setup",content:`<form id="create-room-form" class="form-grid">${field("room-building","Building","text","Main Building")}${field("room-floor","Floor","text","Ground Floor")}${field("room-number","Room Number","text","Example: 101")}<label class="field"><span>Room Type</span><select id="room-type"><option>Non-AC</option><option>AC</option><option>Dormitory</option></select></label><label class="field"><span>Sharing Type</span><select id="room-sharing"><option value="1">Single</option><option value="2">2 Sharing</option><option value="3">3 Sharing</option><option value="4">4 Sharing</option><option value="custom">Custom Capacity</option></select></label>${field("room-capacity","Bed / Sharing Capacity","number","1","1","min='1' max='50'")}<p id="modal-message" class="form-message form-wide"></p><button id="create-room-save" class="primary form-wide">Create Room</button></form>`,onReady(){const sharing=document.querySelector("#room-sharing"),capacity=document.querySelector("#room-capacity");const syncSharing=()=>{if(sharing.value!=="custom"){capacity.value=sharing.value;capacity.readOnly=true;}else{capacity.readOnly=false;if(Number(capacity.value)<1)capacity.value=5;}};sharing.onchange=syncSharing;syncSharing();document.querySelector("#create-room-form").onsubmit=async e=>{e.preventDefault();const b=document.querySelector("#create-room-save");setActionBusy(b,true,"Creating…");try{await createRoom({building:document.querySelector("#room-building").value,floor:document.querySelector("#room-floor").value,roomNumber:document.querySelector("#room-number").value,roomType:document.querySelector("#room-type").value,sharingType:sharing.value,capacity:capacity.value},i);closeModal();return renderRoomManagement();}catch(err){modalMessage(err.code==="room-exists"?"This room number already exists.":`Could not create room. ${err.code||""}`);setActionBusy(b,false);}};}});
   try{
@@ -1793,6 +1806,63 @@ async function renderSystemHealth(){
   document.querySelector('#health-refresh').onclick=run;
   document.querySelector('#health-backup').onclick=async e=>{const b=e.currentTarget;b.disabled=true;b.textContent='Creating…';try{await createBackupSnapshot(i.instituteCode);await run();}catch(err){const m=document.querySelector('#health-message');m.textContent=humanError(err,'Could not create snapshot.');m.className='form-message show error';}finally{b.disabled=false;b.textContent='Create Snapshot';}};
   run();
+}
+
+
+function simplifyAdminHome(){
+  const root=document.querySelector(".dashboard-card")||document;
+  const tiles=[...root.querySelectorAll("button,a")];
+  const textOf=el=>(el.textContent||"").replace(/\s+/g," ").trim().toLowerCase();
+
+  const removeLabels=[
+    "approvals",
+    "audit logs",
+    "audit history",
+    "recycle bin",
+    "backup & restore",
+    "backup and restore",
+    "system health",
+    "notifications"
+  ];
+  tiles.forEach(el=>{
+    const tx=textOf(el);
+    if(removeLabels.some(label=>tx===label || tx.startsWith(label+" ") || tx.endsWith(" "+label))){
+      const tile=el.closest(".admin-home-tile,.dashboard-action,.quick-action,.feature-card")||el;
+      tile.remove();
+    }
+  });
+
+  // Residents should manage existing residents only; admission creation belongs to Admissions.
+  root.querySelectorAll("button,a").forEach(el=>{
+    const tx=textOf(el);
+    if(tx==="new admission" && (state.screen==="residents" || state.screen==="residents-home")){
+      el.remove();
+    }
+  });
+
+  // Add one consolidated System & Safety entry on Admin Home.
+  if(state.screen==="admin-home"){
+    const grid=root.querySelector(".admin-home-grid,.neat-admin-grid");
+    if(grid && !grid.querySelector('[data-open-system-safety]')){
+      const b=document.createElement("button");
+      b.type="button";b.className="admin-home-tile";b.setAttribute("data-open-system-safety","");
+      b.innerHTML='<span class="admin-home-icon">🛡️</span><strong>System & Safety</strong><small>Audit, recycle bin, backup and health.</small>';
+      b.onclick=()=>{state.screen="system-safety";render();};
+      grid.appendChild(b);
+    }
+  }
+}
+
+
+function simplifyResidentHome(){
+  if(!["student-home","resident-home"].includes(state.screen))return;
+  document.querySelectorAll("button,a").forEach(el=>{
+    const tx=(el.textContent||"").replace(/\s+/g," ").trim().toLowerCase();
+    if(tx==="notifications"||tx.startsWith("notifications ")){
+      const tile=el.closest(".student-home-tile,.admin-home-tile,.dashboard-action,.feature-card")||el;
+      tile.remove();
+    }
+  });
 }
 
 function render(){ensureBackGuard();saveUiScreen();if(state.screen==="system-health")return renderSystemHealth();if(state.screen==="approvals")return renderApprovals();if(state.screen==="admin-notifications")return renderAdminNotifications();if(state.screen==="student-notifications")return renderStudentNotifications();if(state.screen==="audit-logs")return renderAuditLogs();if(state.screen==="recycle-bin")return renderRecycleBin();if(state.screen==="backup-restore")return renderBackupRestore();if(state.screen==="super-admin")return renderSuperAdmin();if(state.screen==="institute-password-change")return renderInstitutePasswordChange();if(state.screen==="dashboard")return renderAdminDashboard();if(state.screen==="create")return renderCreate();if(state.screen==="manage")return renderManage();if(state.screen==="institute-portal")return renderInstitutePortal();if(state.screen==="admin-home")return renderInstituteAdminHome();if(state.screen==="settings")return renderSettingsHome();if(state.screen==="institute-admin-login")return renderInstituteAdminLogin();if(state.screen==="admin-login-settings")return renderAdminLoginSettings();if(state.screen==="dashboard-settings")return renderDashboardSettings();if(state.screen==="admission-fee-settings")return renderAdmissionFeeSettings();if(state.screen==="new-admission")return renderNewAdmission();if(state.screen==="manual-admission")return renderManualAdmission();if(state.screen==="admission-success")return renderAdmissionSuccess();if(state.screen==="admission-pending")return renderAdmissionPending();if(state.screen==="student-login")return renderStudentLogin();if(state.screen==="student-password-change")return renderStudentPasswordChange();if(state.screen==="student-dashboard")return renderStudentDashboard();if(state.screen==="student-profile")return renderStudentProfile();if(state.screen==="student-fees")return renderStudentFees();if(state.screen==="student-attendance")return renderStudentAttendance();if(state.screen==="student-entry-exit")return renderStudentEntryExit();if(state.screen==="student-complaints")return renderStudentComplaints();if(state.screen==="student-menu")return renderStudentMenu();if(state.screen==="institute-admin")return renderInstituteAdmin();if(state.screen==="student-manage")return renderStudentManage();if(state.screen==="room-management")return renderRoomManagement();if(state.screen==="room-manage")return renderRoomManage();if(state.screen==="fees-management")return renderFeesManagement();if(state.screen==="pending-admissions")return renderPendingAdmissions();if(state.screen==="admissions-home")return renderAdmissionsHome();if(state.screen==="kitchen")return renderKitchen();if(state.screen==="entry-exit")return renderEntryExit();if(state.screen==="complaints-admin")return renderComplaintsAdmin();if(state.screen==="pdf-reports")return renderPdfReports();return renderInstituteLogin();}
