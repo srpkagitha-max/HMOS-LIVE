@@ -640,7 +640,14 @@ export async function updateStudentProfile(studentIdValue, input, instituteCodeV
     notes: cleanText(input.notes),
     updatedAt: serverTimestamp()
   };
+  const previous = snap.data();
+  const trackedFields = ["studentName","courseOrClass","studentPhone","parentName","parentRelation","parentPhone","address","notes"];
+  const oldValue = Object.fromEntries(trackedFields.map(key => [key, cleanText(previous[key])]));
+  const newValue = Object.fromEntries(trackedFields.map(key => [key, cleanText(payload[key])]));
+  const changedFields = trackedFields.filter(key => oldValue[key] !== newValue[key]);
+  if (!changedFields.length) return { studentId, ...previous, updatedAt: previous.updatedAt };
   await withTimeout(updateDoc(ref, payload), 12000, "student-update-timeout");
+  await createAuditLog({instituteCode,actorType:"admin",action:"student_profile_updated",entityType:"students",entityId:studentId,summary:`${payload.studentName || studentId} updated: ${changedFields.join(", ")}`,oldValue,newValue});
   return { studentId, ...payload, updatedAt: new Date() };
 }
 
@@ -658,6 +665,8 @@ export async function setStudentAccountStatus(studentIdValue, statusValue, insti
   batch.update(profileRef, { accountStatus: status, status, updatedAt: serverTimestamp() });
   batch.update(accessRef, { accountStatus: status, updatedAt: serverTimestamp() });
   await withTimeout(batch.commit(), 12000, "student-status-timeout");
+  const previousStatus = cleanText(profileSnap.data().accountStatus || profileSnap.data().status || "active");
+  if (previousStatus !== status) await createAuditLog({instituteCode,actorType:"admin",action:status === "active" ? "student_activated" : "student_deactivated",entityType:"students",entityId:studentId,summary:`${cleanText(profileSnap.data().studentName) || studentId} access ${status === "active" ? "activated" : "deactivated"}`,oldValue:{accountStatus:previousStatus},newValue:{accountStatus:status}});
   return status;
 }
 
@@ -678,6 +687,7 @@ export async function resetStudentPassword(studentIdValue, instituteCodeValue) {
   const temporaryPassword = generateSixDigitStudentPassword();
   const passwordHash = await sha256(`${studentId}:${temporaryPassword}`);
   await withTimeout(updateDoc(accessRef, { passwordHash, mustChangePassword: true, accountStatus: "active", updatedAt: serverTimestamp() }), 12000, "student-password-reset-timeout");
+  await createAuditLog({instituteCode,actorType:"admin",action:"student_password_reset",entityType:"studentAccess",entityId:studentId,summary:`Password reset for ${studentId}`});
   return temporaryPassword;
 }
 
@@ -694,6 +704,7 @@ export async function archiveStudentProfile(studentIdValue, instituteCodeValue) 
   batch.update(profileRef, { accountStatus: "archived", status: "archived", isArchived: true, archivedAt: serverTimestamp(), updatedAt: serverTimestamp() });
   batch.update(accessRef, { accountStatus: "archived", updatedAt: serverTimestamp() });
   await withTimeout(batch.commit(), 12000, "student-archive-timeout");
+  await createAuditLog({instituteCode,actorType:"admin",action:"student_archived",entityType:"students",entityId:studentId,summary:`${cleanText(profileSnap.data().studentName) || studentId} archived`,oldValue:{accountStatus:cleanText(profileSnap.data().accountStatus || profileSnap.data().status || "active")},newValue:{accountStatus:"archived"}});
   return true;
 }
 

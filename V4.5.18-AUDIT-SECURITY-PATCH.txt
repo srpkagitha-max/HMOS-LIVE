@@ -1,0 +1,17 @@
+HMOS V4.5.18 — Audit & Security Patch
+
+Fixes included:
+1. Student profile edits now create a student_profile_updated audit entry.
+2. Saving without any actual field change does not create a duplicate audit entry.
+3. Student password reset creates a student_password_reset audit entry.
+4. Student activate/deactivate creates student_activated/student_deactivated audit entries.
+5. Student archive creates a student_archived audit entry.
+6. Audit Logs now display exact date and time (including seconds).
+7. Cache/version bumped to V4.5.18 so deployed clients receive the patch.
+
+Test:
+- Edit Ravi Notes and Save Student -> one new student profile updated log.
+- Press Save again without changing anything -> no extra update log.
+- Reset password -> password reset log.
+- Deactivate/activate -> matching access log.
+- Archive only on a disposable/test student -> archive log.
