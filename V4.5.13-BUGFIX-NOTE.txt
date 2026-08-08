@@ -1,0 +1,15 @@
+HMOS V4.5.13 bug-fix patch
+
+Fixed:
+1. Pending Admissions dashboard count now uses status pending_payment_verification.
+2. Pending Admissions page hides stale duplicate applications when the resident already exists.
+3. New pending admissions are blocked when the same resident already exists.
+4. Complaint submissions and complaint status changes are written to Audit Logs.
+5. Admin-recorded fee payments are written to Audit Logs.
+6. Backup export version now matches the deployed app version (4.5.12).
+
+Recommended regression test:
+- Existing resident must not appear in Pending Admissions.
+- New genuine pending admission must increment dashboard Pending Admissions count.
+- Resolve a complaint and confirm complaint_status_changed appears in Audit Logs.
+- Record a small test fee payment and confirm fee_payment_recorded appears in Audit Logs.

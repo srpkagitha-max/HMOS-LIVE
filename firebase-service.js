@@ -821,7 +821,7 @@ export async function recordStudentFeePayment({studentId,instituteCode,amount,mo
   }
   const paymentRef=doc(collection(db,"payments"));
   const receiptNo=`R${new Date().toISOString().slice(0,10).replaceAll("-","")}-${paymentRef.id.slice(0,6).toUpperCase()}`;
-  return withTimeout(runTransaction(db,async tx=>{
+  const result=await withTimeout(runTransaction(db,async tx=>{
     const feeRef=doc(db,"fees",studentId),studentRef=doc(db,"students",studentId);
     const [feeSnap,studentSnap]=await Promise.all([tx.get(feeRef),tx.get(studentRef)]);
     if(!feeSnap.exists()) throw Object.assign(new Error("Set fee plan first"),{code:"fee-plan-missing"});
@@ -834,6 +834,8 @@ export async function recordStudentFeePayment({studentId,instituteCode,amount,mo
     tx.update(studentRef,{feePaid:paidAmount,feeBalance:balanceAmount,feesStatus:balanceAmount>0?"due":"paid",updatedAt:serverTimestamp()});
     return {paymentId:paymentRef.id,receiptNo,amount,mode:cleanText(mode)||"Cash",balanceAmount};
   }),15000,"payment-save-timeout");
+  await createAuditLog({instituteCode,actorType:"admin",action:"fee_payment_recorded",entityType:"payments",entityId:result.paymentId,summary:`₹${amount} payment recorded for ${studentId}. Receipt ${receiptNo}.`,newValue:{studentId,amount,mode:result.mode,balanceAmount:result.balanceAmount,receiptNo}});
+  return result;
 }
 export async function listStudentPayments(studentIdValue){
   const studentId=normalizeCode(studentIdValue);
@@ -856,8 +858,14 @@ export async function submitPendingAdmission(input, instituteSession) {
   if (!upiTransactionId || upiTransactionId.length < 6) throw Object.assign(new Error("Valid UPI transaction ID required"), {code:"transaction-required"});
   const pendingTxnQuery=query(collection(db,"pendingAdmissions"),where("upiTransactionId","==",upiTransactionId),limit(1));
   const paymentTxnQuery=query(collection(db,"payments"),where("reference","==",upiTransactionId),limit(1));
-  const [pendingTxnSnap,paymentTxnSnap]=await Promise.all([getDocs(pendingTxnQuery),getDocs(paymentTxnQuery)]);
+  const residentQuery=query(collection(db,"students"),where("instituteCode","==",instituteCode),limit(1000));
+  const [pendingTxnSnap,paymentTxnSnap,residentSnap]=await Promise.all([getDocs(pendingTxnQuery),getDocs(paymentTxnQuery),getDocs(residentQuery)]);
   if(!pendingTxnSnap.empty || !paymentTxnSnap.empty) throw Object.assign(new Error("This UPI transaction ID was already submitted"),{code:"duplicate-transaction-id"});
+  const studentPhone=cleanText(input.studentPhone).replace(/\D/g,"");
+  const parentPhone=cleanText(input.parentPhone).replace(/\D/g,"");
+  const studentName=cleanText(input.studentName).toLowerCase();
+  const existingResident=residentSnap.docs.map(d=>({id:d.id,...d.data()})).find(x=>!x.isDeleted&&((studentPhone&&cleanText(x.studentPhone).replace(/\D/g,"")===studentPhone)||(studentName&&parentPhone&&cleanText(x.studentName).toLowerCase()===studentName&&cleanText(x.parentPhone).replace(/\D/g,"")===parentPhone)));
+  if(existingResident) throw Object.assign(new Error("This student is already an active resident"),{code:"resident-already-exists",studentId:existingResident.studentId||existingResident.id});
   const roomRef=doc(db,"rooms",cleanText(input.roomId));
   const roomSnap=await getDoc(roomRef);
   if(!roomSnap.exists()) throw Object.assign(new Error("Room not found"),{code:"room-not-found"});
@@ -877,9 +885,22 @@ export async function submitPendingAdmission(input, instituteSession) {
 
 export async function listPendingAdmissions(instituteCodeValue){
   const instituteCode=normalizeCode(instituteCodeValue);
-  const q=query(collection(db,"pendingAdmissions"),where("instituteCode","==",instituteCode),limit(250));
-  const snap=await withTimeout(getDocs(q),12000,"pending-list-timeout");
-  return snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.status==="pending_payment_verification");
+  const pendingQuery=query(collection(db,"pendingAdmissions"),where("instituteCode","==",instituteCode),limit(250));
+  const residentQuery=query(collection(db,"students"),where("instituteCode","==",instituteCode),limit(1000));
+  const [pendingSnap,residentSnap]=await Promise.all([
+    withTimeout(getDocs(pendingQuery),12000,"pending-list-timeout"),
+    withTimeout(getDocs(residentQuery),12000,"resident-list-timeout")
+  ]);
+  const residents=residentSnap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>!x.isDeleted);
+  return pendingSnap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>{
+    if(x.status!=="pending_payment_verification"||x.isDeleted)return false;
+    const sid=normalizeCode(x.studentId);
+    const phone=cleanText(x.studentPhone).replace(/\D/g,"");
+    const parentPhone=cleanText(x.parentPhone).replace(/\D/g,"");
+    const name=cleanText(x.studentName).toLowerCase();
+    const alreadyResident=residents.some(r=>(sid&&normalizeCode(r.studentId||r.id)===sid)||(phone&&cleanText(r.studentPhone).replace(/\D/g,"")===phone)||(name&&parentPhone&&cleanText(r.studentName).toLowerCase()===name&&cleanText(r.parentPhone).replace(/\D/g,"")===parentPhone));
+    return !alreadyResident;
+  });
 }
 
 export async function approvePendingAdmission(applicationId,instituteSession){
@@ -959,10 +980,10 @@ export async function submitMovementRequest(input){
 export async function markStudentEntry(movementId){await updateDoc(doc(db,"movements",cleanText(movementId)),{status:"returned",actualReturnAt:serverTimestamp(),updatedAt:serverTimestamp()});return true;}
 export async function listInstituteMovements(instituteCodeValue){const code=normalizeCode(instituteCodeValue),q=query(collection(db,"movements"),where("instituteCode","==",code),limit(500)),snap=await getDocs(q);return snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));}
 export async function getStudentMovements(studentIdValue){const id=normalizeCode(studentIdValue),q=query(collection(db,"movements"),where("studentId","==",id),limit(250)),snap=await getDocs(q);return snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));}
-export async function submitComplaint(input){const studentId=normalizeCode(input.studentId),instituteCode=normalizeCode(input.instituteCode);if(!studentId||!instituteCode||!cleanText(input.details))throw Object.assign(new Error("Invalid complaint"),{code:"invalid-complaint"});const ref=doc(collection(db,"complaints"));const data={id:ref.id,studentId,studentName:cleanText(input.studentName),instituteCode,category:cleanText(input.category)||"Other",subject:cleanText(input.subject)||"Complaint",details:cleanText(input.details),status:"submitted",createdAt:serverTimestamp(),updatedAt:serverTimestamp()};await setDoc(ref,data);return data;}
+export async function submitComplaint(input){const studentId=normalizeCode(input.studentId),instituteCode=normalizeCode(input.instituteCode);if(!studentId||!instituteCode||!cleanText(input.details))throw Object.assign(new Error("Invalid complaint"),{code:"invalid-complaint"});const ref=doc(collection(db,"complaints"));const data={id:ref.id,studentId,studentName:cleanText(input.studentName),instituteCode,category:cleanText(input.category)||"Other",subject:cleanText(input.subject)||"Complaint",details:cleanText(input.details),status:"submitted",createdAt:serverTimestamp(),updatedAt:serverTimestamp()};await setDoc(ref,data);await createAuditLog({instituteCode,actorType:"resident",actorId:studentId,action:"complaint_submitted",entityType:"complaints",entityId:ref.id,summary:`${data.studentName||studentId}: ${data.subject}`});return data;}
 export async function listStudentComplaints(studentIdValue){const id=normalizeCode(studentIdValue),q=query(collection(db,"complaints"),where("studentId","==",id),limit(250)),snap=await getDocs(q);return snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));}
 export async function listInstituteComplaints(instituteCodeValue){const code=normalizeCode(instituteCodeValue),q=query(collection(db,"complaints"),where("instituteCode","==",code),limit(500)),snap=await getDocs(q);return snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));}
-export async function updateComplaintStatus(complaintId,status){await updateDoc(doc(db,"complaints",cleanText(complaintId)),{status:cleanText(status),updatedAt:serverTimestamp()});return true;}
+export async function updateComplaintStatus(complaintId,status){const id=cleanText(complaintId),ref=doc(db,"complaints",id),snap=await getDoc(ref);if(!snap.exists())throw Object.assign(new Error("Complaint not found"),{code:"complaint-not-found"});const complaint=snap.data(),nextStatus=cleanText(status);await updateDoc(ref,{status:nextStatus,updatedAt:serverTimestamp()});await createAuditLog({instituteCode:complaint.instituteCode,actorType:"admin",action:"complaint_status_changed",entityType:"complaints",entityId:id,summary:`${complaint.subject||"Complaint"}: ${complaint.status||"submitted"} → ${nextStatus}`,oldValue:{status:complaint.status||"submitted"},newValue:{status:nextStatus}});return true;}
 export async function submitStudentFeePaymentRequest(input){const studentId=normalizeCode(input.studentId),instituteCode=normalizeCode(input.instituteCode),amount=Number(input.amount||0),reference=cleanText(input.reference);if(!studentId||!instituteCode||amount<=0||!reference)throw Object.assign(new Error("Invalid payment request"),{code:"invalid-payment-request"});const ref=doc(collection(db,"payments"));const data={paymentId:ref.id,studentId,studentName:cleanText(input.studentName),instituteCode,amount,mode:"UPI",reference,status:"pending_verification",createdAt:serverTimestamp(),paidAt:serverTimestamp()};await setDoc(ref,data);return data;}
 
 
@@ -1028,7 +1049,7 @@ export async function exportInstituteBackup(instituteCodeValue){
       throw error;
     }
   }
-  return {format:"HMOS_INSTITUTE_BACKUP_V1",appVersion:"4.5.4",generatedAt:new Date().toISOString(),instituteCode:code,totalRecords,collections};
+  return {format:"HMOS_INSTITUTE_BACKUP_V1",appVersion:"4.5.12",generatedAt:new Date().toISOString(),instituteCode:code,totalRecords,collections};
 }
 function serializeBackupValue(value){
   if(value===null||value===undefined)return value??null;
@@ -1169,7 +1190,7 @@ export async function getInstituteLiveMetrics(instituteCodeValue) {
   ]);
 
   const residents = studentsSnap.docs.map(d=>d.data()).filter(x=>!x.isDeleted&&(x.accountStatus||"active")==="active").length;
-  const pendingAdmissions = admissionsSnap.docs.map(d=>d.data()).filter(x=>!x.isDeleted&&String(x.status||"").toLowerCase()==="pending").length;
+  const pendingAdmissions = admissionsSnap.docs.map(d=>d.data()).filter(x=>!x.isDeleted&&String(x.status||"").toLowerCase()==="pending_payment_verification").length;
 
   const openComplaints = complaintsSnap.docs.map(d=>d.data()).filter(x=>{
     if(x.isDeleted)return false;
