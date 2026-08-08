@@ -9,10 +9,10 @@ import {
   submitStudentFeePaymentRequest, getInstituteBranding, saveInstituteBranding, saveAdmissionFeeSettings,
   createApprovalRequest, listApprovalRequests, decideApprovalRequest, createNotification, listNotifications, markNotificationRead, createAuditLog, listAuditLogs, softDeleteRecord, listRecycleBin, restoreDeletedRecord, createBackupSnapshot, listBackupSnapshots, exportInstituteBackup, restoreInstituteBackup, findDuplicateAdmissions,
   loginInstituteAdmin, changeInstituteAdminCredentials, checkAdmissionStatus, getSystemHealth, getInstituteLiveMetrics, reconcileResidentBedAssignments
-} from "./firebase-service.js?v=4.5.30";
+} from "./firebase-service.js?v=4.5.31";
 
 const app = document.querySelector("#app");
-const HMOS_VERSION = "4.5.30";
+const HMOS_VERSION = "4.5.31";
 window.__HMOS_VERSION__ = HMOS_VERSION;
 
 const activeOperations = new Set();
@@ -1114,10 +1114,16 @@ async function openAdmissionBedSelector(){
           document.querySelector("#admission-bed-picker-grid").innerHTML=`<div class="cinema-bed-grid">${beds.map(x=>`<button type="button" class="cinema-bed vacant" data-abed="${esc(x.bedNumber)}"><span>BED</span><strong>${esc(x.bedNumber)}</strong><small>Vacant</small></button>`).join("")}</div>`;
           document.querySelectorAll("[data-abed]").forEach(bb=>bb.onclick=()=>{
             state.selectedAdmissionBed={...r,roomId:r.id||r.roomId,bedNumber:bb.dataset.abed};
+            closeModal();
             const p=document.querySelector("#selected-admission-bed");
             if(p)p.textContent=`${r.floor||"—"} · Room ${r.roomNumber} · ${sharingLabel(r)} · Bed ${bb.dataset.abed}`;
-            applySelectedRoomFee(state.selectedAdmissionBed);
-            closeModal();
+            try{
+              applySelectedRoomFee(state.selectedAdmissionBed);
+            }catch(err){
+              console.error("Bed fee apply failed:",err);
+              const source=document.querySelector("#selected-fee-source");
+              if(source)source.textContent="Bed selected. Fee could not be calculated; re-open Admission Fees Settings.";
+            }
           });
         });
       });
@@ -1543,6 +1549,9 @@ function sharingLabel(room){
   if(type==="4-sharing"||n===4)return "4 Sharing";
   return n>0?`${n} Sharing`:"Custom";
 }
+function formatMoney(value){
+  return Number(value||0).toLocaleString("en-IN",{maximumFractionDigits:2});
+}
 function sharingFeeForRoom(room){
   const b=state.branding||{},n=Number(room?.sharingCapacity||room?.capacity||0);
   const map={1:Number(b.singleSharingFees||0),2:Number(b.twoSharingFees||0),3:Number(b.threeSharingFees||0),4:Number(b.fourSharingFees||0)};
@@ -1551,7 +1560,7 @@ function sharingFeeForRoom(room){
 function applySelectedRoomFee(room){
   const fee=sharingFeeForRoom(room);
   const total=document.querySelector("#a-total-fees")||document.querySelector("#m-total-fees");
-  const paying=document.querySelector("#a-paying-now")||document.querySelector("#m-paying-now");
+  const paying=document.querySelector("#a-paying-now")||document.querySelector("#m-paid-now");
   const balance=document.querySelector("#a-balance")||document.querySelector("#m-balance");
   const source=document.querySelector("#selected-fee-source");
   const summary=document.querySelector("#selected-room-fee-summary");
@@ -1565,7 +1574,7 @@ function applySelectedRoomFee(room){
     const occupied=(room?.beds||[]).filter(b=>bedStatusOf(b)==="occupied").length;
     const capacity=Number(room?.sharingCapacity||room?.capacity||(room?.beds||[]).length||0);
     const bed=state.selectedAdmissionBed?.bedNumber||"—";
-    summary.innerHTML=`<strong>Room ${esc(room?.roomNumber||"—")} · ${esc(sharingLabel(room))} · Bed ${esc(bed)}</strong><span>${occupied}/${capacity} occupied · Fee ₹${money(fee||0)}</span>`;
+    summary.innerHTML=`<strong>Room ${esc(room?.roomNumber||"—")} · ${esc(sharingLabel(room))} · Bed ${esc(bed)}</strong><span>${occupied}/${capacity} occupied · Fee ₹${formatMoney(fee||0)}</span>`;
   }
   if(paying){
     const current=Number(paying.value||0);

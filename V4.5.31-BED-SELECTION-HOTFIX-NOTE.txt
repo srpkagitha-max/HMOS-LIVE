@@ -1,0 +1,17 @@
+HMOS V4.5.31 — Bed Selection Hotfix
+
+Root cause:
+V4.5.30 called a non-existent money() function while updating the selected-bed fee summary.
+That JavaScript exception caused the global 'A page error occurred' banner and interrupted
+the bed-selection UI update.
+
+Fixed:
+1. Replaced the invalid money() call with a safe currency formatter.
+2. Bed selection is committed before fee rendering.
+3. Fee rendering is protected so a display error cannot cancel the selected bed.
+4. Manual admission fee auto-fill now targets the correct Amount Received field (m-paid-now).
+5. Existing legacy rooms such as 10-sharing remain selectable, but their fee is ₹0 unless a
+   corresponding fee model is added. Single / 2 / 3 / 4 sharing rooms use configured fees.
+
+Expected:
+Room 202 · 3 Sharing · Bed A/B/C -> Total Fees ₹7,500 (with the user's current settings).
