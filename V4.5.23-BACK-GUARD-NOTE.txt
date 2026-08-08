@@ -1,0 +1,15 @@
+HMOS V4.5.23 — Android Back Guard
+
+Fixes:
+1. Admin: feature -> Admin Home -> HMOS entrance/start screen -> Exit/Stay prompt.
+2. Resident: feature -> Student Home -> HMOS entrance/start screen -> Exit/Stay prompt.
+3. Android/Chrome back is trapped with a permanent in-app history guard, preventing the app/tab from closing before HMOS handles Back.
+4. Only the HMOS starting screen shows Exit HMOS / Stay.
+5. Choosing Stay keeps the app open on the start screen.
+6. Choosing Exit HMOS releases the guard and leaves the app.
+7. Session/same-screen resume behavior from earlier builds is retained.
+8. Cache/version bumped to 4.5.23.
+
+Test:
+- Admin login -> Fees -> Back -> Admin Home -> Back -> HMOS start -> Back -> Exit/Stay.
+- Resident login -> Notifications -> Back -> Student Home -> Back -> HMOS start -> Back -> Exit/Stay.

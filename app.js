@@ -9,10 +9,10 @@ import {
   submitStudentFeePaymentRequest, getInstituteBranding, saveInstituteBranding, saveAdmissionFeeSettings,
   createApprovalRequest, listApprovalRequests, decideApprovalRequest, createNotification, listNotifications, markNotificationRead, createAuditLog, listAuditLogs, softDeleteRecord, listRecycleBin, restoreDeletedRecord, createBackupSnapshot, listBackupSnapshots, exportInstituteBackup, restoreInstituteBackup, findDuplicateAdmissions,
   loginInstituteAdmin, changeInstituteAdminCredentials, checkAdmissionStatus, getSystemHealth, getInstituteLiveMetrics, reconcileResidentBedAssignments
-} from "./firebase-service.js?v=4.5.22";
+} from "./firebase-service.js?v=4.5.23";
 
 const app = document.querySelector("#app");
-const HMOS_VERSION = "4.5.22";
+const HMOS_VERSION = "4.5.23";
 window.__HMOS_VERSION__ = HMOS_VERSION;
 
 const activeOperations = new Set();
@@ -72,7 +72,7 @@ const state = {
 };
 
 
-const UI_SCREEN_KEY = "hmosUiScreenV452";
+const UI_SCREEN_KEY = "hmosUiScreenV453";
 const APP_ROOT_SCREENS = new Set(["institute","institute-portal","admin-home","student-dashboard","dashboard","super-admin"]);
 const ADMIN_SCREENS = new Set([
   "admin-home","institute-admin","student-manage","room-management","room-manage","fees-management",
@@ -1524,7 +1524,7 @@ async function renderSystemHealth(){
   run();
 }
 
-function render(){saveUiScreen();if(state.screen==="system-health")return renderSystemHealth();if(state.screen==="approvals")return renderApprovals();if(state.screen==="admin-notifications")return renderAdminNotifications();if(state.screen==="student-notifications")return renderStudentNotifications();if(state.screen==="audit-logs")return renderAuditLogs();if(state.screen==="recycle-bin")return renderRecycleBin();if(state.screen==="backup-restore")return renderBackupRestore();if(state.screen==="super-admin")return renderSuperAdmin();if(state.screen==="institute-password-change")return renderInstitutePasswordChange();if(state.screen==="dashboard")return renderAdminDashboard();if(state.screen==="create")return renderCreate();if(state.screen==="manage")return renderManage();if(state.screen==="institute-portal")return renderInstitutePortal();if(state.screen==="admin-home")return renderInstituteAdminHome();if(state.screen==="settings")return renderSettingsHome();if(state.screen==="institute-admin-login")return renderInstituteAdminLogin();if(state.screen==="admin-login-settings")return renderAdminLoginSettings();if(state.screen==="dashboard-settings")return renderDashboardSettings();if(state.screen==="admission-fee-settings")return renderAdmissionFeeSettings();if(state.screen==="new-admission")return renderNewAdmission();if(state.screen==="manual-admission")return renderManualAdmission();if(state.screen==="admission-success")return renderAdmissionSuccess();if(state.screen==="admission-pending")return renderAdmissionPending();if(state.screen==="student-login")return renderStudentLogin();if(state.screen==="student-password-change")return renderStudentPasswordChange();if(state.screen==="student-dashboard")return renderStudentDashboard();if(state.screen==="student-profile")return renderStudentProfile();if(state.screen==="student-fees")return renderStudentFees();if(state.screen==="student-attendance")return renderStudentAttendance();if(state.screen==="student-entry-exit")return renderStudentEntryExit();if(state.screen==="student-complaints")return renderStudentComplaints();if(state.screen==="student-menu")return renderStudentMenu();if(state.screen==="institute-admin")return renderInstituteAdmin();if(state.screen==="student-manage")return renderStudentManage();if(state.screen==="room-management")return renderRoomManagement();if(state.screen==="room-manage")return renderRoomManage();if(state.screen==="fees-management")return renderFeesManagement();if(state.screen==="pending-admissions")return renderPendingAdmissions();if(state.screen==="admissions-home")return renderAdmissionsHome();if(state.screen==="kitchen")return renderKitchen();if(state.screen==="entry-exit")return renderEntryExit();if(state.screen==="complaints-admin")return renderComplaintsAdmin();if(state.screen==="pdf-reports")return renderPdfReports();return renderInstituteLogin();}
+function render(){ensureBackGuard();saveUiScreen();if(state.screen==="system-health")return renderSystemHealth();if(state.screen==="approvals")return renderApprovals();if(state.screen==="admin-notifications")return renderAdminNotifications();if(state.screen==="student-notifications")return renderStudentNotifications();if(state.screen==="audit-logs")return renderAuditLogs();if(state.screen==="recycle-bin")return renderRecycleBin();if(state.screen==="backup-restore")return renderBackupRestore();if(state.screen==="super-admin")return renderSuperAdmin();if(state.screen==="institute-password-change")return renderInstitutePasswordChange();if(state.screen==="dashboard")return renderAdminDashboard();if(state.screen==="create")return renderCreate();if(state.screen==="manage")return renderManage();if(state.screen==="institute-portal")return renderInstitutePortal();if(state.screen==="admin-home")return renderInstituteAdminHome();if(state.screen==="settings")return renderSettingsHome();if(state.screen==="institute-admin-login")return renderInstituteAdminLogin();if(state.screen==="admin-login-settings")return renderAdminLoginSettings();if(state.screen==="dashboard-settings")return renderDashboardSettings();if(state.screen==="admission-fee-settings")return renderAdmissionFeeSettings();if(state.screen==="new-admission")return renderNewAdmission();if(state.screen==="manual-admission")return renderManualAdmission();if(state.screen==="admission-success")return renderAdmissionSuccess();if(state.screen==="admission-pending")return renderAdmissionPending();if(state.screen==="student-login")return renderStudentLogin();if(state.screen==="student-password-change")return renderStudentPasswordChange();if(state.screen==="student-dashboard")return renderStudentDashboard();if(state.screen==="student-profile")return renderStudentProfile();if(state.screen==="student-fees")return renderStudentFees();if(state.screen==="student-attendance")return renderStudentAttendance();if(state.screen==="student-entry-exit")return renderStudentEntryExit();if(state.screen==="student-complaints")return renderStudentComplaints();if(state.screen==="student-menu")return renderStudentMenu();if(state.screen==="institute-admin")return renderInstituteAdmin();if(state.screen==="student-manage")return renderStudentManage();if(state.screen==="room-management")return renderRoomManagement();if(state.screen==="room-manage")return renderRoomManage();if(state.screen==="fees-management")return renderFeesManagement();if(state.screen==="pending-admissions")return renderPendingAdmissions();if(state.screen==="admissions-home")return renderAdmissionsHome();if(state.screen==="kitchen")return renderKitchen();if(state.screen==="entry-exit")return renderEntryExit();if(state.screen==="complaints-admin")return renderComplaintsAdmin();if(state.screen==="pdf-reports")return renderPdfReports();return renderInstituteLogin();}
 
 watchAuth(async user=>{state.authUser=user;if(!user){if(["dashboard","create","manage"].includes(state.screen))state.screen="super-admin";render();return;}if(user.email?.toLowerCase()!==SUPER_ADMIN_EMAIL){await logoutCurrentUser();return renderSuperAdmin("This email is not authorized as HMOS Super Admin.");}state.institutes=readCache();state.screen="dashboard";render();try{state.institutes=await listInstitutes();writeCache(state.institutes);if(state.screen==="dashboard")renderAdminDashboard();}catch(err){console.error(err);}});
 try{state.adminAuthenticated=Boolean(sessionStorage.getItem(ADMIN_SESSION_KEY));}catch{}
@@ -1556,33 +1556,50 @@ function showExitDialog(){
   openModal({
     title:"Exit HMOS?",
     eyebrow:"App navigation",
-    content:`<p class="confirm-copy">Do you want to leave HMOS or stay in the app?</p><div class="modal-actions"><button id="hmos-stay" class="secondary" type="button">Stay</button><button id="hmos-exit" class="primary danger-primary" type="button">Exit HMOS</button></div>`,
+    content:`<p class="confirm-copy">Do you want to exit HMOS?</p><div class="modal-actions"><button id="hmos-stay" class="secondary" type="button">Stay</button><button id="hmos-exit" class="primary danger-primary" type="button">Exit HMOS</button></div>`,
     onReady(){
-      document.querySelector("#hmos-stay").onclick=()=>{closeModal();history.pushState({hmos:true},'',location.href);};
-      document.querySelector("#hmos-exit").onclick=()=>{window.__HMOS_ALLOW_EXIT__=true;closeModal();history.back();};
+      document.querySelector("#hmos-stay").onclick=()=>{closeModal();};
+      document.querySelector("#hmos-exit").onclick=()=>{
+        window.__HMOS_ALLOW_EXIT__=true;
+        closeModal();
+        try{history.go(-2);}catch{history.back();}
+      };
     }
   });
 }
+function ensureBackGuard(){
+  try{
+    const st=history.state||{};
+    if(!st.hmosGuard) history.pushState({hmosGuard:true},'',location.href);
+  }catch{}
+}
 function handleAppBack(){
   if(window.__HMOS_ALLOW_EXIT__)return;
+
+  // Re-create an in-app guard immediately so Android/Chrome cannot leave
+  // before HMOS handles the back action.
+  try{history.pushState({hmosGuard:true},'',location.href);}catch{}
+
   closeModal();
   const parent=SCREEN_PARENTS[state.screen];
   if(parent){
     state.screen=parent;
     render();
-    history.pushState({hmos:true},'',location.href);
     return;
   }
+
+  // Any non-starting HMOS screen must first return to the HMOS entrance screen.
   if(state.screen!=="institute"){
     state.screen="institute";
     render();
-    history.pushState({hmos:true},'',location.href);
     return;
   }
+
+  // Only the HMOS entrance/start screen may ask to exit.
   showExitDialog();
 }
-history.replaceState({hmos:true},'',location.href);
-history.pushState({hmos:true},'',location.href);
+history.replaceState({hmosBase:true},'',location.href);
+ensureBackGuard();
 window.addEventListener('popstate',handleAppBack);
 
 let deferredInstallPrompt = null;
