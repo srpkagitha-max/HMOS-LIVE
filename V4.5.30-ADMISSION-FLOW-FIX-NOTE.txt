@@ -1,0 +1,21 @@
+HMOS V4.5.30 — Admission Flow Correction
+
+This fixes the V4.5.29 issue where the old admission markup was still rendering.
+
+Online Admission:
+1. Bed Selection is now physically rendered before Fee Details.
+2. Selecting a bed stores the complete room record, including sharing capacity/type.
+3. Selected room immediately applies its sharing-wise fee.
+4. Total Fees is locked/read-only.
+5. Amount Paying Now remains editable.
+6. Balance recalculates from the selected sharing fee.
+7. Summary shows Floor / Room / Sharing / Bed / occupancy / fee.
+8. Admission is blocked until a bed is selected and its sharing fee is configured.
+
+Manual Admission:
+- Same room-first flow.
+- Total fee auto-fills and is locked.
+- Amount Received is editable.
+- Balance is shown and auto-updates.
+
+Version/cache bumped to 4.5.30.

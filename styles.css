@@ -669,3 +669,9 @@ input[readonly]{
   font-weight:800;
   cursor:not-allowed;
 }
+
+/* HMOS V4.5.30 — admission flow correction */
+.admission-primary-step{border:2px solid color-mix(in srgb,var(--brand-primary,#0b4f8a),transparent 78%)!important}
+.admission-primary-step .form-help{margin:4px 0 14px;color:#6b7b8c;line-height:1.45}
+.selected-bed{font-weight:700;color:#17324f;margin-top:12px}
+.room-fee-summary{margin-top:10px}

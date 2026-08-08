@@ -9,10 +9,10 @@ import {
   submitStudentFeePaymentRequest, getInstituteBranding, saveInstituteBranding, saveAdmissionFeeSettings,
   createApprovalRequest, listApprovalRequests, decideApprovalRequest, createNotification, listNotifications, markNotificationRead, createAuditLog, listAuditLogs, softDeleteRecord, listRecycleBin, restoreDeletedRecord, createBackupSnapshot, listBackupSnapshots, exportInstituteBackup, restoreInstituteBackup, findDuplicateAdmissions,
   loginInstituteAdmin, changeInstituteAdminCredentials, checkAdmissionStatus, getSystemHealth, getInstituteLiveMetrics, reconcileResidentBedAssignments
-} from "./firebase-service.js?v=4.5.29";
+} from "./firebase-service.js?v=4.5.30";
 
 const app = document.querySelector("#app");
-const HMOS_VERSION = "4.5.29";
+const HMOS_VERSION = "4.5.30";
 window.__HMOS_VERSION__ = HMOS_VERSION;
 
 const activeOperations = new Set();
@@ -976,47 +976,171 @@ function renderPdfReports(){
 
 function renderNewAdmission(message="") {
   const i=state.instituteSession;if(!i){state.screen="institute";return render();}
-  const today=new Date().toISOString().slice(0,10), studentId=generateStudentId(i.instituteCode), payment=paymentDetails(), total=0;
-  app.innerHTML=shell(`<section class="card admission-card wide-card"><button id="back-portal" class="back">← Institute Portal</button><div class="card-heading"><span class="step success-step">Student onboarding</span><h2>New Admission</h2><p>Payment verification and bed booking for <strong>${esc(i.instituteName)}</strong>.</p></div><form id="admission-form" class="form-grid" novalidate>${field("a-student-id","Student ID","text","Auto generated",studentId,"readonly")}${field("a-student-name","Student Full Name","text","Enter student name")}${field("a-dob","Date of Birth","date","","","max='${today}'")}<label class="field"><span>Gender</span><select id="a-gender"><option value="">Select gender</option><option>Male</option><option>Female</option><option>Other</option></select></label>${field("a-course","Course / Class","text","Example: B.Tech 1st Year")}${field("a-student-phone","Student Phone","tel","Required 10-digit number","","required inputmode='numeric'")}${field("a-parent-name","Parent / Guardian Name","text","Enter parent name")}<label class="field"><span>Relation</span><select id="a-parent-relation"><option>Father</option><option>Mother</option><option>Guardian</option></select></label>${field("a-parent-phone","Parent Phone","tel","Required 10-digit number")}${field("a-joining","Joining Date","date","",today)}<label class="field form-wide"><span>Permanent Address</span><textarea id="a-address"></textarea></label><div class="form-wide fee-box"><h3>Fee Details</h3>${field("a-total-fees","Total Fees","number","0",total,"readonly")}${field("a-paying-now","Amount Paying Now","number","Enter amount",total||"","min='1'")}${field("a-balance","Balance Amount","number","0",0,"readonly")}</div><div class="form-wide bed-booking-box"><h3>Bed Selection</h3><button id="select-admission-bed" type="button" class="secondary">Select Floor, Room & Bed</button><p id="selected-admission-bed">No bed selected</p></div>${paymentBoxHtml(total,true)}<p id="admission-message" class="form-message form-wide ${message?"show error":""}">${esc(message)}</p><button id="admission-submit" class="primary form-wide">Submit for Admin Approval <span>→</span></button></form>${admissionStatusSection()}</section>`,true);
-  document.querySelector("#back-portal").onclick=()=>{state.screen="institute-portal";render();};
-  const paying=document.querySelector("#a-paying-now"),balance=document.querySelector("#a-balance");const syncAdmissionPayment=()=>{const amount=Math.max(0,Number(paying.value||0));balance.value=Math.max(0,total-amount);const x=document.querySelector("#payment-display-amount");if(x)x.textContent=`₹${amount.toLocaleString("en-IN")}`;};paying.oninput=syncAdmissionPayment;syncAdmissionPayment();
+  const today=new Date().toISOString().slice(0,10), studentId=generateStudentId(i.instituteCode), payment=paymentDetails();
+  state.selectedAdmissionBed=null;
+  app.innerHTML=shell(`<section class="card admission-card wide-card"><button id="back-portal" class="back">← Institute Portal</button><div class="card-heading"><span class="step success-step">Student onboarding</span><h2>New Admission</h2><p>Payment verification and bed booking for <strong>${esc(i.instituteName)}</strong>.</p></div><form id="admission-form" class="form-grid" novalidate>
+  ${field("a-student-id","Student ID","text","Auto generated",studentId,"readonly")}
+  ${field("a-student-name","Student Full Name","text","Enter student name")}
+  ${field("a-dob","Date of Birth","date","","","max='${today}'")}
+  <label class="field"><span>Gender</span><select id="a-gender"><option value="">Select gender</option><option>Male</option><option>Female</option><option>Other</option></select></label>
+  ${field("a-course","Course / Class","text","Example: B.Tech 1st Year")}
+  ${field("a-student-phone","Student Phone","tel","Required 10-digit number","","required inputmode='numeric'")}
+  ${field("a-parent-name","Parent / Guardian Name","text","Enter parent name")}
+  <label class="field"><span>Relation</span><select id="a-parent-relation"><option>Father</option><option>Mother</option><option>Guardian</option></select></label>
+  ${field("a-parent-phone","Parent Phone","tel","Required 10-digit number")}
+  ${field("a-joining","Joining Date","date","",today)}
+  <label class="field form-wide"><span>Permanent Address</span><textarea id="a-address"></textarea></label>
+
+  <div class="form-wide bed-booking-box admission-primary-step">
+    <span class="step">Step 1</span><h3>Bed Selection</h3>
+    <p class="form-help">Select the room first. The configured sharing fee will be applied automatically.</p>
+    <button id="select-admission-bed" type="button" class="secondary">Select Floor, Room & Bed</button>
+    <p id="selected-admission-bed" class="selected-bed">No bed selected</p>
+    <div id="selected-room-fee-summary" class="room-fee-summary">
+      <strong>Select a room and bed</strong>
+      <span>Room sharing fee will appear here automatically.</span>
+    </div>
+  </div>
+
+  <div class="form-wide fee-box">
+    <span class="step">Step 2</span><h3>Fee Details</h3>
+    ${field("a-total-fees","Total Fees","number","0",0,"readonly")}
+    <small id="selected-fee-source" class="fee-source-note">Select a room/bed to apply the sharing fee.</small>
+    ${field("a-paying-now","Amount Paying Now","number","Enter amount","","min='1'")}
+    ${field("a-balance","Balance Amount","number","0",0,"readonly")}
+  </div>
+
+  ${paymentBoxHtml(0,true)}
+  <p id="admission-message" class="form-message form-wide ${message?"show error":""}">${esc(message)}</p>
+  <button id="admission-submit" class="primary form-wide">Submit for Admin Approval <span>→</span></button>
+  </form>${admissionStatusSection()}</section>`,true);
+
+  document.querySelector("#back-portal").onclick=()=>{state.selectedAdmissionBed=null;state.screen="institute-portal";render();};
+  const paying=document.querySelector("#a-paying-now");
+  paying.oninput=()=>{syncAdmissionBalance("a");const x=document.querySelector("#payment-display-amount");if(x)x.textContent=`₹${Number(paying.value||0).toLocaleString("en-IN")}`;};
   document.querySelector("#select-admission-bed").onclick=()=>openAdmissionBedSelector();
   bindPaymentActions(()=>Number(paying.value||0),studentId);
   document.querySelector("#admission-form").onsubmit=submitAdmission;
   bindAdmissionStatusForm();
 }
-
 function renderManualAdmission(){
   const i=state.instituteSession;if(!i){state.screen="institute";return render();}
   const today=new Date().toISOString().slice(0,10),studentId=generateStudentId(i.instituteCode);
-  app.innerHTML=shell(`<section class="card admission-card wide-card"><button id="manual-back" class="back">← Admissions</button><div class="card-heading"><span class="step success-step">Admin admission</span><h2>Manual Admission</h2><p>Create the resident directly. No online payment or approval is required.</p></div><form id="manual-admission-form" class="form-grid" novalidate>${field("m-student-id","Student ID","text","Auto generated",studentId,"readonly")}${field("m-student-name","Student Full Name","text","Enter resident name")}${field("m-dob","Date of Birth","date","","","max='${today}'")}<label class="field"><span>Gender</span><select id="m-gender"><option value="">Select gender</option><option>Male</option><option>Female</option><option>Other</option></select></label>${field("m-course","Course / Class","text","Example: B.Tech 1st Year")}${field("m-student-phone","Student Phone","tel","Required 10-digit number","","required inputmode='numeric'")}${field("m-parent-name","Parent / Guardian Name","text","Enter parent name")}<label class="field"><span>Relation</span><select id="m-parent-relation"><option>Father</option><option>Mother</option><option>Guardian</option></select></label>${field("m-parent-phone","Parent Phone","tel","Required 10-digit number","","required inputmode='numeric'")}${field("m-joining","Joining Date","date","",today)}<label class="field form-wide"><span>Permanent Address</span><textarea id="m-address"></textarea></label><div class="form-wide bed-booking-box"><h3>Bed Selection</h3><button id="select-manual-bed" type="button" class="secondary">Select Floor, Room & Bed</button><p id="selected-admission-bed">No bed selected</p></div><div class="form-wide fee-box"><h3>Manual Fee Entry</h3>${field("m-total-fees","Total Fees","number","0",0,"min='0' readonly")}${field("m-paid-now","Amount Received","number","0",0,"min='0'")}<label class="field"><span>Payment Mode</span><select id="m-payment-mode"><option>Cash</option><option>UPI</option><option>Bank Transfer</option><option>Free Admission</option></select></label>${field("m-payment-reference","Receipt / Reference","text","Optional")}</div><p id="manual-admission-message" class="form-message form-wide"></p><button id="manual-admission-submit" class="primary form-wide">Create Resident & Login</button></form></section>`,true);
+  state.selectedAdmissionBed=null;
+  app.innerHTML=shell(`<section class="card admission-card wide-card"><button id="manual-back" class="back">← Admissions</button><div class="card-heading"><span class="step success-step">Admin admission</span><h2>Manual Admission</h2><p>Create the resident directly. No online payment or approval is required.</p></div><form id="manual-admission-form" class="form-grid" novalidate>
+  ${field("m-student-id","Student ID","text","Auto generated",studentId,"readonly")}
+  ${field("m-student-name","Student Full Name","text","Enter resident name")}
+  ${field("m-dob","Date of Birth","date","","","max='${today}'")}
+  <label class="field"><span>Gender</span><select id="m-gender"><option value="">Select gender</option><option>Male</option><option>Female</option><option>Other</option></select></label>
+  ${field("m-course","Course / Class","text","Example: B.Tech 1st Year")}
+  ${field("m-student-phone","Student Phone","tel","Required 10-digit number","","required inputmode='numeric'")}
+  ${field("m-parent-name","Parent / Guardian Name","text","Enter parent name")}
+  <label class="field"><span>Relation</span><select id="m-parent-relation"><option>Father</option><option>Mother</option><option>Guardian</option></select></label>
+  ${field("m-parent-phone","Parent Phone","tel","Required 10-digit number","","required inputmode='numeric'")}
+  ${field("m-joining","Joining Date","date","",today)}
+  <label class="field form-wide"><span>Permanent Address</span><textarea id="m-address"></textarea></label>
+
+  <div class="form-wide bed-booking-box admission-primary-step">
+    <span class="step">Step 1</span><h3>Bed Selection</h3>
+    <p class="form-help">Select the room first. The configured sharing fee will be applied automatically.</p>
+    <button id="select-manual-bed" type="button" class="secondary">Select Floor, Room & Bed</button>
+    <p id="selected-admission-bed" class="selected-bed">No bed selected</p>
+    <div id="selected-room-fee-summary" class="room-fee-summary">
+      <strong>Select a room and bed</strong>
+      <span>Room sharing fee will appear here automatically.</span>
+    </div>
+  </div>
+
+  <div class="form-wide fee-box">
+    <span class="step">Step 2</span><h3>Fee Details</h3>
+    ${field("m-total-fees","Total Fees","number","0",0,"readonly")}
+    <small id="selected-fee-source" class="fee-source-note">Select a room/bed to apply the sharing fee.</small>
+    ${field("m-paid-now","Amount Received","number","0",0,"min='0'")}
+    ${field("m-balance","Balance Amount","number","0",0,"readonly")}
+    <label class="field"><span>Payment Mode</span><select id="m-payment-mode"><option>Cash</option><option>UPI</option><option>Bank Transfer</option><option>Free Admission</option></select></label>
+    ${field("m-payment-reference","Receipt / Reference","text","Optional")}
+  </div>
+
+  <p id="manual-admission-message" class="form-message form-wide"></p>
+  <button id="manual-admission-submit" class="primary form-wide">Create Resident & Login</button>
+  </form></section>`,true);
+
   document.querySelector("#manual-back").onclick=()=>{state.selectedAdmissionBed=null;state.screen="admissions-home";render();};
   document.querySelector("#select-manual-bed").onclick=()=>openAdmissionBedSelector();
-  const manualPaying=document.querySelector("#m-paying-now");if(manualPaying)manualPaying.oninput=()=>syncAdmissionBalance("m");document.querySelector("#manual-admission-form").onsubmit=async e=>{
+  const manualPaid=document.querySelector("#m-paid-now");
+  manualPaid.oninput=()=>{
+    const fee=Number(document.querySelector("#m-total-fees").value||0);
+    if(Number(manualPaid.value||0)>fee)manualPaid.value=fee;
+    document.querySelector("#m-balance").value=Math.max(0,fee-Number(manualPaid.value||0));
+  };
+  document.querySelector("#manual-admission-form").onsubmit=async e=>{
     e.preventDefault();
     const v=id=>document.querySelector("#"+id).value.trim(),msg=document.querySelector("#manual-admission-message"),btn=document.querySelector("#manual-admission-submit");
     const studentPhone=v("m-student-phone").replace(/\D/g,""),parentPhone=v("m-parent-phone").replace(/\D/g,"");
     if(!v("m-student-name")||!v("m-gender")||!v("m-parent-name")||!/^\d{10}$/.test(studentPhone)||!/^\d{10}$/.test(parentPhone)){msg.textContent="Complete all required details and enter valid 10-digit phone numbers.";msg.className="form-message show error form-wide";return;}
     if(!state.selectedAdmissionBed){msg.textContent="Select a vacant bed.";msg.className="form-message show error form-wide";return;}
-    const totalFee=Math.max(0,Number(v("m-total-fees")||0)),paid=Math.max(0,Number(v("m-paid-now")||0));
+    const totalFee=sharingFeeForRoom(state.selectedAdmissionBed),paid=Math.max(0,Number(v("m-paid-now")||0));
+    if(totalFee<=0){msg.textContent=`No ${sharingLabel(state.selectedAdmissionBed)} fee is configured. Update Admission Fees Settings first.`;msg.className="form-message show error form-wide";return;}
     if(paid>totalFee){msg.textContent="Amount Received cannot be greater than Total Fees.";msg.className="form-message show error form-wide";return;}
     btn.disabled=true;btn.textContent="Creating…";
     try{
       const created=await createStudentAdmission({studentId:v("m-student-id"),studentName:v("m-student-name"),dateOfBirth:v("m-dob"),gender:v("m-gender"),courseOrClass:v("m-course"),studentPhone,parentName:v("m-parent-name"),parentRelation:v("m-parent-relation"),parentPhone,emergencyPhone:"",aadhaarLast4:"",joiningDate:v("m-joining"),address:v("m-address"),notes:""},i);
       await allotStudentBed({studentIdValue:created.studentId,roomIdValue:state.selectedAdmissionBed.roomId,bedNumberValue:state.selectedAdmissionBed.bedNumber,instituteCodeValue:i.instituteCode});
-      if(totalFee>0){await saveStudentFeePlan({studentId:created.studentId,instituteCode:i.instituteCode,totalFee,dueDate:""});if(paid>0)await recordStudentFeePayment({studentId:created.studentId,instituteCode:i.instituteCode,amount:paid,mode:v("m-payment-mode"),reference:v("m-payment-reference")});}
+      await saveStudentFeePlan({studentId:created.studentId,instituteCode:i.instituteCode,totalFee,dueDate:""});
+      if(paid>0)await recordStudentFeePayment({studentId:created.studentId,instituteCode:i.instituteCode,amount:paid,mode:v("m-payment-mode"),reference:v("m-payment-reference")});
       state.latestAdmission={...created,...state.selectedAdmissionBed,totalFees:totalFee,amountPayingNow:paid,balanceAmount:Math.max(0,totalFee-paid)};
       state.selectedAdmissionBed=null;state.screen="admission-success";render();
     }catch(err){msg.textContent=`Could not create manual admission. ${humanError(err,err.code||"Unknown error")}`;msg.className="form-message show error form-wide";btn.disabled=false;btn.textContent="Create Resident & Login";}
   };
 }
-
 async function openAdmissionBedSelector(){
- const i=state.instituteSession; let rooms=state.rooms.length?state.rooms:await listInstituteRooms(i.instituteCode); state.rooms=rooms;
- const floors=[...new Set(rooms.map(floorKey))];
- openModal({title:"Select Bed",eyebrow:"Floor → Room → Bed",wide:true,content:`<div id="admission-bed-picker"><div class="floor-tabs">${floors.map(f=>`<button type="button" data-afloor="${esc(f)}" class="floor-tab">${esc(f)}</button>`).join("")}</div><div id="admission-room-picker"></div><div id="admission-bed-picker-grid"></div></div><p id="modal-message" class="form-message"></p>`,onReady(){document.querySelectorAll("[data-afloor]").forEach(b=>b.onclick=()=>{const fr=rooms.filter(r=>floorKey(r)===b.dataset.afloor);document.querySelector("#admission-room-picker").innerHTML=fr.map(r=>`<button type="button" class="secondary admission-room-btn" data-aroom="${esc(r.id||r.roomId)}">Room ${esc(r.roomNumber)} · ${esc(sharingLabel(r))}</button>`).join("");document.querySelectorAll("[data-aroom]").forEach(rb=>rb.onclick=()=>{const r=rooms.find(x=>(x.id||x.roomId)===rb.dataset.aroom);const beds=(r.beds||[]).filter(x=>bedStatusOf(x)==="vacant"&&x.isVisible!==false);document.querySelector("#admission-bed-picker-grid").innerHTML=`<div class="cinema-bed-grid">${beds.map(x=>`<button type="button" class="cinema-bed vacant" data-abed="${esc(x.bedNumber)}"><span>BED</span><strong>${esc(x.bedNumber)}</strong><small>Vacant</small></button>`).join("")}</div>`;document.querySelectorAll("[data-abed]").forEach(bb=>bb.onclick=()=>{state.selectedAdmissionBed={roomId:r.id||r.roomId,roomNumber:r.roomNumber,floor:r.floor,building:r.building,bedNumber:bb.dataset.abed};closeModal();const p=document.querySelector("#selected-admission-bed");if(p)p.textContent=`${r.floor} · Room ${r.roomNumber} · Bed ${bb.dataset.abed}`;});});});}});
+  const i=state.instituteSession;
+  let rooms=state.rooms.length?state.rooms:await listInstituteRooms(i.instituteCode);
+  state.rooms=rooms;
+  const floors=[...new Set(rooms.map(floorKey))];
+  openModal({
+    title:"Select Bed",eyebrow:"Floor → Room → Bed",wide:true,
+    content:`<div id="admission-bed-picker"><div class="floor-tabs">${floors.map(f=>`<button type="button" data-afloor="${esc(f)}" class="floor-tab">${esc(f)}</button>`).join("")}</div><div id="admission-room-picker"></div><div id="admission-bed-picker-grid"></div></div><p id="modal-message" class="form-message"></p>`,
+    onReady(){
+      document.querySelectorAll("[data-afloor]").forEach(b=>b.onclick=()=>{
+        const fr=rooms.filter(r=>floorKey(r)===b.dataset.afloor);
+        document.querySelector("#admission-room-picker").innerHTML=fr.map(r=>{
+          const vacant=(r.beds||[]).filter(x=>bedStatusOf(x)==="vacant"&&x.isVisible!==false).length;
+          return `<button type="button" class="secondary admission-room-btn" data-aroom="${esc(r.id||r.roomId)}">Room ${esc(r.roomNumber)} · ${esc(sharingLabel(r))} · ${vacant} vacant</button>`;
+        }).join("");
+        document.querySelectorAll("[data-aroom]").forEach(rb=>rb.onclick=()=>{
+          const r=rooms.find(x=>(x.id||x.roomId)===rb.dataset.aroom);
+          const beds=(r.beds||[]).filter(x=>bedStatusOf(x)==="vacant"&&x.isVisible!==false);
+          document.querySelector("#admission-bed-picker-grid").innerHTML=`<div class="cinema-bed-grid">${beds.map(x=>`<button type="button" class="cinema-bed vacant" data-abed="${esc(x.bedNumber)}"><span>BED</span><strong>${esc(x.bedNumber)}</strong><small>Vacant</small></button>`).join("")}</div>`;
+          document.querySelectorAll("[data-abed]").forEach(bb=>bb.onclick=()=>{
+            state.selectedAdmissionBed={...r,roomId:r.id||r.roomId,bedNumber:bb.dataset.abed};
+            const p=document.querySelector("#selected-admission-bed");
+            if(p)p.textContent=`${r.floor||"—"} · Room ${r.roomNumber} · ${sharingLabel(r)} · Bed ${bb.dataset.abed}`;
+            applySelectedRoomFee(state.selectedAdmissionBed);
+            closeModal();
+          });
+        });
+      });
+    }
+  });
 }
-async function submitAdmission(event){event.preventDefault();const i=state.instituteSession,m=document.querySelector("#admission-message"),b=document.querySelector("#admission-submit"),v=id=>document.querySelector(`#${id}`).value.trim();const studentPhone=v("a-student-phone").replace(/\D/g,""),parentPhone=v("a-parent-phone").replace(/\D/g,""),totalFees=Number(v("a-total-fees")||0),amountPayingNow=Number(v("a-paying-now")||0),transactionId=v("a-upi-transaction");if(!v("a-student-name")||!v("a-gender")||!v("a-parent-name")){m.textContent="Enter Student Name, Gender and Parent / Guardian Name.";m.className="form-message show error form-wide";return;}if(!/^\d{10}$/.test(studentPhone)||!/^\d{10}$/.test(parentPhone)){m.textContent="Student and Parent phone numbers must contain 10 digits.";m.className="form-message show error form-wide";return;}if(totalFees<=0){m.textContent="Default Total Fees is not configured. Ask the institute admin to save Admission Fees Settings.";m.className="form-message show error form-wide";return;}if(amountPayingNow<=0||amountPayingNow>totalFees){m.textContent="Amount Paying Now must be greater than ₹0 and cannot exceed Total Fees.";m.className="form-message show error form-wide";return;}if(transactionId.length<6){m.textContent="Complete the UPI payment and enter a valid Transaction ID.";m.className="form-message show error form-wide";return;}if(!state.selectedAdmissionBed){m.textContent="Select a vacant bed.";m.className="form-message show error form-wide";return;}const input={studentId:v("a-student-id"),studentName:v("a-student-name"),dateOfBirth:v("a-dob"),gender:v("a-gender"),courseOrClass:v("a-course"),studentPhone,parentName:v("a-parent-name"),parentRelation:v("a-parent-relation"),parentPhone,joiningDate:v("a-joining"),address:v("a-address"),notes:"",totalFees,amountPayingNow,upiTransactionId:transactionId,...state.selectedAdmissionBed};b.disabled=true;b.textContent="Submitting…";try{state.latestAdmission=await submitPendingAdmission(input,i);state.screen="admission-pending";render();}catch(err){m.textContent=`Could not submit admission. ${humanError(err,err.code||"Unknown error")}`;m.className="form-message show error form-wide";b.disabled=false;b.innerHTML="Submit for Admin Approval <span>→</span>";}}
+async function submitAdmission(event){
+  event.preventDefault();
+  const i=state.instituteSession,m=document.querySelector("#admission-message"),b=document.querySelector("#admission-submit"),v=id=>document.querySelector(`#${id}`).value.trim();
+  const studentPhone=v("a-student-phone").replace(/\D/g,""),parentPhone=v("a-parent-phone").replace(/\D/g,"");
+  if(!v("a-student-name")||!v("a-gender")||!v("a-parent-name")){m.textContent="Enter Student Name, Gender and Parent / Guardian Name.";m.className="form-message show error form-wide";return;}
+  if(!/^\d{10}$/.test(studentPhone)||!/^\d{10}$/.test(parentPhone)){m.textContent="Student and Parent phone numbers must contain 10 digits.";m.className="form-message show error form-wide";return;}
+  if(!state.selectedAdmissionBed){m.textContent="Select floor, room and bed first.";m.className="form-message show error form-wide";return;}
+  const totalFees=sharingFeeForRoom(state.selectedAdmissionBed);
+  if(totalFees<=0){m.textContent=`No ${sharingLabel(state.selectedAdmissionBed)} fee is configured. Ask the institute admin to update Admission Fees Settings.`;m.className="form-message show error form-wide";return;}
+  const amountPayingNow=Number(v("a-paying-now")||0),transactionId=v("a-upi-transaction");
+  if(amountPayingNow<=0||amountPayingNow>totalFees){m.textContent="Amount Paying Now must be greater than ₹0 and cannot exceed Total Fees.";m.className="form-message show error form-wide";return;}
+  if(transactionId.length<6){m.textContent="Complete the UPI payment and enter a valid Transaction ID.";m.className="form-message show error form-wide";return;}
+  const input={studentId:v("a-student-id"),studentName:v("a-student-name"),dateOfBirth:v("a-dob"),gender:v("a-gender"),courseOrClass:v("a-course"),studentPhone,parentName:v("a-parent-name"),parentRelation:v("a-parent-relation"),parentPhone,joiningDate:v("a-joining"),address:v("a-address"),notes:"",totalFees,amountPayingNow,upiTransactionId:transactionId,...state.selectedAdmissionBed};
+  b.disabled=true;b.textContent="Submitting…";
+  try{state.latestAdmission=await submitPendingAdmission(input,i);state.screen="admission-pending";render();}
+  catch(err){m.textContent=`Could not submit admission. ${humanError(err,err.code||"Unknown error")}`;m.className="form-message show error form-wide";b.disabled=false;b.innerHTML="Submit for Admin Approval <span>→</span>";}
+}
 function renderAdmissionPending(){const a=state.latestAdmission;if(!a){state.screen="new-admission";return render();}app.innerHTML=shell(`<section class="card admission-success-card wide-card"><div class="success-check">...</div><span class="step">Payment verification pending</span><h2>${esc(a.studentName)}</h2><p>Application <strong>${esc(a.applicationId)}</strong> was submitted. The selected bed is temporarily reserved.</p><div class="receipt-grid"><article><span>Selected Bed</span><strong>${esc(a.floor)} · Room ${esc(a.roomNumber)} · Bed ${esc(a.bedNumber)}</strong></article><article><span>Total Fees</span><strong>₹${Number(a.totalFees).toLocaleString("en-IN")}</strong></article><article><small id="selected-fee-source" class="fee-source-note">Select a room/bed to apply the sharing fee.</small><span>Amount Paying Now</span><strong>₹${Number(a.amountPayingNow).toLocaleString("en-IN")}</strong></article><article><span>Balance Amount</span><strong>₹${Number(a.balanceAmount).toLocaleString("en-IN")}</strong></article></div><button id="pending-portal" class="primary">Return to Institute Portal</button></section>`,true);document.querySelector("#pending-portal").onclick=()=>{state.screen="institute-portal";render();};}
 function renderAdmissionSuccess(){
   const a=state.latestAdmission,i=state.instituteSession;
