@@ -1,0 +1,11 @@
+HMOS V4.5.28
+
+Change:
+- Removed Default Total Fees from Admission Fees Settings.
+- Removed legacy default-fee fallback from sharing-room fee lookup.
+- Removed Default Total Fees from institute creation/edit UI.
+- Admission fee now starts at 0 until a room/bed sharing fee is selected.
+- Sharing-wise fee settings are now the fee source for Single / 2 / 3 / 4 sharing.
+- Firestore rules no longer need defaultTotalFees as an instituteAccess editable field.
+
+Existing defaultTotalFees values already stored in Firestore are harmless legacy data and are no longer used by this version.
