@@ -1,0 +1,18 @@
+HMOS V4.5.20 Consolidated Patch
+
+Fixes included:
+1. Admin-recorded fee payments now create resident notifications.
+2. Older fee payments are shown as resident notification history even if created before this patch.
+3. Legacy admission notifications using recipientType=student are now visible to resident logins.
+4. New admission notifications consistently use recipientType=resident.
+5. Complaint status changes now notify the affected resident.
+6. Exit submissions create an admin notification.
+7. Marking resident entry creates a resident notification.
+8. Service-worker cache/build version bumped to force fresh assets after GitHub Pages deployment.
+
+Primary verification:
+- Record admin fee payment -> resident Notifications should show Fee payment received.
+- Existing older payments should also appear in resident Notifications.
+- Change complaint status -> resident gets Complaint status updated.
+- Resident submits exit -> admin gets Resident outside.
+- Admin marks entry -> resident gets Entry recorded.
