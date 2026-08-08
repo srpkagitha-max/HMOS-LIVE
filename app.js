@@ -9,10 +9,10 @@ import {
   submitStudentFeePaymentRequest, getInstituteBranding, saveInstituteBranding, saveAdmissionFeeSettings,
   createApprovalRequest, listApprovalRequests, decideApprovalRequest, createNotification, listNotifications, markNotificationRead, createAuditLog, listAuditLogs, softDeleteRecord, listRecycleBin, restoreDeletedRecord, createBackupSnapshot, listBackupSnapshots, exportInstituteBackup, restoreInstituteBackup, findDuplicateAdmissions,
   loginInstituteAdmin, changeInstituteAdminCredentials, checkAdmissionStatus, getSystemHealth, getInstituteLiveMetrics, reconcileResidentBedAssignments
-} from "./firebase-service.js?v=4.5.12";
+} from "./firebase-service.js?v=4.5.14";
 
 const app = document.querySelector("#app");
-const HMOS_VERSION = "4.5.12";
+const HMOS_VERSION = "4.5.14";
 window.__HMOS_VERSION__ = HMOS_VERSION;
 
 const activeOperations = new Set();
@@ -1325,12 +1325,15 @@ async function renderPendingAdmissions(){
   document.querySelector("#pending-back").onclick=()=>{state.screen="admin-home";render();};
   try{
     state.pendingAdmissions=await listPendingAdmissions(i.instituteCode);
+    // The user may navigate while the Firestore request is in flight. Do not write into a stale screen.
+    const pendingList=document.querySelector("#pending-list");
+    if(state.screen!=="pending-admissions" || !pendingList) return;
     const rows=[...state.pendingAdmissions].sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
-    document.querySelector("#pending-list").innerHTML=rows.map(a=>`<article class="fee-student-card pending-admission-card"><div><span class="pill expired-pill">Payment verification</span><strong>${esc(a.studentName)}</strong><span>${esc(a.applicationId)}</span><small>${esc(a.course||"Course not entered")} · ${esc(a.studentPhone||"")}</small><small>${esc(a.floor)} · Room ${esc(a.roomNumber)} · Bed ${esc(a.bedNumber)}</small></div><div class="fee-amounts"><small>Total Fee</small><strong>₹${Number(a.totalFees||0).toLocaleString("en-IN")}</strong><small>Paid Now</small><strong>₹${Number(a.amountPayingNow||0).toLocaleString("en-IN")}</strong><small>Balance</small><strong>₹${Number(a.balanceAmount||0).toLocaleString("en-IN")}</strong></div><div class="transaction-box"><small>UPI Transaction ID</small><code>${esc(a.upiTransactionId||"")}</code><button class="secondary compact-button" type="button" data-copy-txn="${esc(a.upiTransactionId||"")}">Copy Txn ID</button></div><div class="credential-actions"><button class="primary" data-approve-admission="${esc(a.applicationId)}">Approve & Create Resident</button><button class="secondary" data-reject-admission="${esc(a.applicationId)}">Reject</button></div></article>`).join("")||`<div class="empty-state"><strong>No pending admissions.</strong></div>`;
+    pendingList.innerHTML=rows.map(a=>`<article class="fee-student-card pending-admission-card"><div><span class="pill expired-pill">Payment verification</span><strong>${esc(a.studentName)}</strong><span>${esc(a.applicationId)}</span><small>${esc(a.course||"Course not entered")} · ${esc(a.studentPhone||"")}</small><small>${esc(a.floor)} · Room ${esc(a.roomNumber)} · Bed ${esc(a.bedNumber)}</small></div><div class="fee-amounts"><small>Total Fee</small><strong>₹${Number(a.totalFees||0).toLocaleString("en-IN")}</strong><small>Paid Now</small><strong>₹${Number(a.amountPayingNow||0).toLocaleString("en-IN")}</strong><small>Balance</small><strong>₹${Number(a.balanceAmount||0).toLocaleString("en-IN")}</strong></div><div class="transaction-box"><small>UPI Transaction ID</small><code>${esc(a.upiTransactionId||"")}</code><button class="secondary compact-button" type="button" data-copy-txn="${esc(a.upiTransactionId||"")}">Copy Txn ID</button></div><div class="credential-actions"><button class="primary" data-approve-admission="${esc(a.applicationId)}">Approve & Create Resident</button><button class="secondary" data-reject-admission="${esc(a.applicationId)}">Reject</button></div></article>`).join("")||`<div class="empty-state"><strong>No pending admissions.</strong></div>`;
     document.querySelectorAll("[data-copy-txn]").forEach(b=>b.onclick=async()=>{await copyText(b.dataset.copyTxn);b.textContent="Copied";setTimeout(()=>b.textContent="Copy Txn ID",1200);});
     document.querySelectorAll("[data-approve-admission]").forEach(b=>b.onclick=async()=>{if(!confirm("Payment verified? Approve admission and create resident account?"))return;b.disabled=true;b.textContent="Creating resident…";try{state.latestAdmission=await approvePendingAdmission(b.dataset.approveAdmission,i);state.screen="admission-success";render();}catch(err){alert(`Approval failed: ${humanError(err,err.code||err.message)}`);b.disabled=false;b.textContent="Approve & Create Resident";}});
     document.querySelectorAll("[data-reject-admission]").forEach(b=>b.onclick=async()=>{const reason=prompt("Reason for rejection","Payment could not be verified");if(reason===null)return;b.disabled=true;b.textContent="Rejecting…";try{await rejectPendingAdmission(b.dataset.rejectAdmission,reason.trim()||"Payment could not be verified");renderPendingAdmissions();}catch(err){alert(`Rejection failed: ${humanError(err,err.code||err.message)}`);b.disabled=false;b.textContent="Reject";}});
-  }catch(err){document.querySelector("#pending-list").innerHTML=`<p class="form-message show error">${esc(humanError(err,err.code||"Could not load"))}</p>`;}
+  }catch(err){const pendingList=document.querySelector("#pending-list");if(state.screen==="pending-admissions"&&pendingList)pendingList.innerHTML=`<p class="form-message show error">${esc(humanError(err,err.code||"Could not load"))}</p>`;}
 }
 
 async function refreshAdminBadges(){const i=state.instituteSession;if(!i)return;try{const [approvals,notes]=await Promise.all([listApprovalRequests(i.instituteCode,"pending"),listNotifications({instituteCode:i.instituteCode,recipientType:"admin"})]);state.approvals=approvals.filter(x=>x.requestType!=='exit_request');state.notifications=notes;const ab=document.querySelector('#approvals-badge'),nb=document.querySelector('#notifications-badge');if(ab)ab.textContent=state.approvals.length;if(nb)nb.textContent=notes.filter(n=>!n.isRead).length;}catch(err){console.warn('badge load',err);}}
@@ -1447,8 +1450,15 @@ if("serviceWorker" in navigator) {
 }
 
 window.addEventListener("error", event => {
+  const message=String(event?.error?.message||event?.message||"");
   console.error("HMOS runtime error:", event.error || event.message);
-  showConnectionBanner("A page error occurred. Reload if the screen does not recover.", "error");
+  // Route changes can finish while an older async render is still unwinding. Those stale-DOM
+  // null-reference errors are harmless and should not alarm the user when the current page works.
+  const staleDomRace=/Cannot (read|set) properties of null|Cannot read property .* of null/i.test(message);
+  const benignBrowserNoise=/ResizeObserver loop|Script error\.?$/i.test(message);
+  if(!staleDomRace && !benignBrowserNoise){
+    showConnectionBanner("A page error occurred. Reload if the screen does not recover.", "error");
+  }
 });
 window.addEventListener("unhandledrejection", event => {
   console.error("HMOS promise error:", event.reason);

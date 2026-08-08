@@ -1,0 +1,12 @@
+HMOS V4.5.14 BUGFIX
+
+Fixes:
+1. Dashboard Pending Admissions counter now uses the same already-resident de-duplication rules as the Pending Admissions list.
+2. Pending Admissions async rendering is route-safe, preventing stale DOM writes after navigation.
+3. Global page-error banner no longer alarms on harmless stale-render null-reference races / browser noise.
+4. Cache/version bumped so the corrected files are fetched after deployment.
+
+Expected result for the reported case:
+- Dashboard Pending Admissions: 0
+- Pending Admissions page: No pending admissions.
+- No generic page-error banner during normal navigation.

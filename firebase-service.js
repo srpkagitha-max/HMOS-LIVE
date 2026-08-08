@@ -1049,7 +1049,7 @@ export async function exportInstituteBackup(instituteCodeValue){
       throw error;
     }
   }
-  return {format:"HMOS_INSTITUTE_BACKUP_V1",appVersion:"4.5.12",generatedAt:new Date().toISOString(),instituteCode:code,totalRecords,collections};
+  return {format:"HMOS_INSTITUTE_BACKUP_V1",appVersion:"4.5.14",generatedAt:new Date().toISOString(),instituteCode:code,totalRecords,collections};
 }
 function serializeBackupValue(value){
   if(value===null||value===undefined)return value??null;
@@ -1189,8 +1189,21 @@ export async function getInstituteLiveMetrics(instituteCodeValue) {
     getDocs(query(collection(db, "fees"), where("instituteCode", "==", instituteCode), limit(5000)))
   ]);
 
-  const residents = studentsSnap.docs.map(d=>d.data()).filter(x=>!x.isDeleted&&(x.accountStatus||"active")==="active").length;
-  const pendingAdmissions = admissionsSnap.docs.map(d=>d.data()).filter(x=>!x.isDeleted&&String(x.status||"").toLowerCase()==="pending_payment_verification").length;
+  const activeResidentRows = studentsSnap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>!x.isDeleted&&(x.accountStatus||"active")==="active");
+  const residents = activeResidentRows.length;
+  const pendingAdmissions = admissionsSnap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>{
+    if(x.isDeleted || String(x.status||"").toLowerCase()!=="pending_payment_verification") return false;
+    const sid=normalizeCode(x.studentId);
+    const phone=cleanText(x.studentPhone).replace(/\D/g,"");
+    const parentPhone=cleanText(x.parentPhone).replace(/\D/g,"");
+    const name=cleanText(x.studentName).toLowerCase();
+    const alreadyResident=activeResidentRows.some(r=>
+      (sid&&normalizeCode(r.studentId||r.id)===sid) ||
+      (phone&&cleanText(r.studentPhone).replace(/\D/g,"")===phone) ||
+      (name&&parentPhone&&cleanText(r.studentName).toLowerCase()===name&&cleanText(r.parentPhone).replace(/\D/g,"")===parentPhone)
+    );
+    return !alreadyResident;
+  }).length;
 
   const openComplaints = complaintsSnap.docs.map(d=>d.data()).filter(x=>{
     if(x.isDeleted)return false;
