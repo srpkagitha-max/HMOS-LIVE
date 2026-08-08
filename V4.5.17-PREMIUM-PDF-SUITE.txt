@@ -1,0 +1,18 @@
+HMOS V4.5.17 — Premium PDF Suite
+
+Changes
+- Unified premium institute header across generated PDFs and reports.
+- Institute name is prominent at the top, followed by institute code, address and contact details when available.
+- Fee receipt now opens a dedicated clean print document instead of printing the background application page.
+- Admission confirmation and student profile PDF now use dedicated clean print documents.
+- Student ID print uses the same premium HMOS document theme.
+- Admission approval/payment documents use the same premium document theme.
+- Existing PDF reports use matching institute header styling.
+- A4 print rules, clean spacing, no app navigation/background/modal elements in generated PDFs.
+
+Recommended checks
+1. Record a small fee payment -> Print / Save PDF -> only receipt document should appear.
+2. Student Profile -> Print / Save Admission PDF -> premium header + profile details.
+3. Admission approval -> Download Admission PDF / Pay Receipt -> matching premium style.
+4. Admin PDF reports -> open any report -> header and content should match the suite.
+5. Print preview on Android Chrome should show only document content, not HMOS screen behind it.
