@@ -1,0 +1,18 @@
+HMOS V4.5.25 — Responsive Breakpoint Fix
+
+Fixes:
+1. Android Chrome 'Desktop site' mode no longer activates the laptop/desktop layout.
+2. Phones and touch devices keep the normal full-width mobile HMOS UI.
+3. Actual laptops/desktops use a proper wide centered layout with:
+   - larger header
+   - full-width content area
+   - 3/4 column dashboard grids
+   - wider forms
+4. Dashboard appearance modes from V4.5.24 are preserved.
+5. Version/cache bumped to 4.5.25.
+
+Recommended tests:
+- Phone normal mode
+- Phone 'Desktop site' mode
+- Laptop/desktop browser at 1366px or wider
+- Dashboard Settings modes 1/2/3
