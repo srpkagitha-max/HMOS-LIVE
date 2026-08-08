@@ -1,0 +1,29 @@
+HMOS V4.5.27 — Firestore Compatibility for Sharing Fees
+
+Problem:
+Admission Fees Settings could not save after adding Single / 2 Sharing / 3 Sharing / 4 Sharing fee defaults.
+The app was correctly writing the new fields, but the current Firestore Rules did not permit those fields
+on instituteAccess updates.
+
+Fix:
+Added these permitted instituteAccess fields:
+- singleSharingFees
+- twoSharingFees
+- threeSharingFees
+- fourSharingFees
+
+Security:
+The existing update restriction remains in place. This patch only adds the four new allowed field names;
+it does NOT make instituteAccess generally writable.
+
+IMPORTANT DEPLOYMENT:
+Uploading website files alone is not enough for this fix.
+You must also deploy the included firestore.rules to the same Firebase project.
+
+Typical Firebase CLI command:
+firebase deploy --only firestore:rules
+
+After rules deployment:
+Settings -> Admission Fees Settings -> set sharing-wise fees -> Save Admission Settings.
+
+Version/cache bumped to 4.5.27.
