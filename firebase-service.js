@@ -708,6 +708,23 @@ export async function archiveStudentProfile(studentIdValue, instituteCodeValue) 
   return true;
 }
 
+export async function restoreStudentProfile(studentIdValue, instituteCodeValue) {
+  const studentId = normalizeCode(studentIdValue);
+  const instituteCode = normalizeCode(instituteCodeValue);
+  const profileRef = doc(db, "students", studentId);
+  const accessRef = doc(db, "studentAccess", studentId);
+  const profileSnap = await withTimeout(getDoc(profileRef), 9000, "student-read-timeout");
+  if (!profileSnap.exists() || normalizeCode(profileSnap.data().instituteCode) !== instituteCode) {
+    throw Object.assign(new Error("Student not found"), { code: "student-not-found" });
+  }
+  const batch = writeBatch(db);
+  batch.update(profileRef, { accountStatus: "active", status: "active", isArchived: false, archivedAt: null, updatedAt: serverTimestamp() });
+  batch.update(accessRef, { accountStatus: "active", updatedAt: serverTimestamp() });
+  await withTimeout(batch.commit(), 12000, "student-restore-timeout");
+  await createAuditLog({instituteCode,actorType:"admin",action:"student_restored",entityType:"students",entityId:studentId,summary:`${cleanText(profileSnap.data().studentName) || studentId} restored`,oldValue:{accountStatus:"archived"},newValue:{accountStatus:"active"}});
+  return true;
+}
+
 // V3.1 Room & Bed Management
 export async function listInstituteRooms(instituteCodeValue) {
   const instituteCode = normalizeCode(instituteCodeValue);

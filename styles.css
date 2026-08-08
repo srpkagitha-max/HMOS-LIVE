@@ -508,3 +508,14 @@ html,body{max-width:100%;overflow-x:hidden}
 .tappable-live-metrics button small{color:#748492}
 .tappable-live-metrics.is-loading button{opacity:.72}
 .live-metrics-note.metric-error{color:#b03434}
+
+
+/* HMOS v4.5.19 — resident lifecycle + compact install control */
+.resident-list-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.compact-secondary{min-height:44px;padding:0 15px;border-radius:14px}
+@media(max-width:650px){
+  .resident-list-actions{width:100%;justify-content:stretch}
+  .resident-list-actions>button{flex:1}
+  .pwa-install-button{left:auto!important;right:max(10px,env(safe-area-inset-right))!important;transform:none!important;bottom:max(10px,calc(env(safe-area-inset-bottom) + 8px))!important;min-height:42px!important;padding:0 13px!important;font-size:13px!important;box-shadow:0 8px 20px rgba(4,37,72,.22)!important;opacity:.94}
+  body{padding-bottom:max(62px,calc(env(safe-area-inset-bottom) + 54px))}
+}

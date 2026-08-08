@@ -1,0 +1,13 @@
+HMOS V4.5.19 — Resident Lifecycle & Mobile UI
+
+Fixes:
+1. Archived students are hidden from the default Residents list and available under an Archived view.
+2. Archived students can be restored safely; restore is written to Audit Logs.
+3. Residents Capacity now uses the live non-archived resident count and displays Current / Student Limit.
+4. The Install HMOS control is compact and bottom-right on mobile with safe-area spacing to reduce content overlap.
+
+Test:
+- Archive a resident: it should disappear from Residents and appear under Archived.
+- Restore it: it should return to Residents and login becomes active.
+- Capacity should read e.g. 3 / 300 after one of four residents is archived.
+- Install button should no longer cover central action buttons/content on mobile.
