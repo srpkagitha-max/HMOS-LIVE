@@ -1,0 +1,5 @@
+HMOS V4.5.16
+
+Fix: Admin Complaints now separates Open Complaints from Resolved / History.
+Dashboard Open Complaints count and the Open Complaints section use the same status rule.
+Resolved/rejected/closed complaints remain available in history and are not counted as open.
