@@ -9,10 +9,10 @@ import {
   submitStudentFeePaymentRequest, getInstituteBranding, saveInstituteBranding, saveAdmissionFeeSettings,
   createApprovalRequest, listApprovalRequests, decideApprovalRequest, createNotification, listNotifications, markNotificationRead, createAuditLog, listAuditLogs, softDeleteRecord, listRecycleBin, restoreDeletedRecord, createBackupSnapshot, listBackupSnapshots, exportInstituteBackup, restoreInstituteBackup, findDuplicateAdmissions,
   loginInstituteAdmin, changeInstituteAdminCredentials, checkAdmissionStatus, getSystemHealth, getInstituteLiveMetrics, reconcileResidentBedAssignments
-} from "./firebase-service.js?v=4.5.21";
+} from "./firebase-service.js?v=4.5.22";
 
 const app = document.querySelector("#app");
-const HMOS_VERSION = "4.5.21";
+const HMOS_VERSION = "4.5.22";
 window.__HMOS_VERSION__ = HMOS_VERSION;
 
 const activeOperations = new Set();
@@ -54,6 +54,13 @@ function hideConnectionBanner() {
   const banner = document.querySelector("#hmos-connection-banner");
   if (banner) banner.hidden = true;
 }
+
+function dateTimeText(value){
+  try{
+    const d=value?.toDate?value.toDate():(value?.seconds?new Date(value.seconds*1000):(value?new Date(value):null));
+    return d&&!Number.isNaN(d.getTime())?d.toLocaleString():"—";
+  }catch{return "—";}
+}
 window.addEventListener("offline", () => showConnectionBanner("You are offline. Saved data will sync after internet returns.", "warning"));
 window.addEventListener("online", () => { showConnectionBanner("Internet restored.", "success"); setTimeout(hideConnectionBanner, 2200); });
 if (window.__HMOS_BOOT_TIMER__) clearTimeout(window.__HMOS_BOOT_TIMER__);
@@ -65,7 +72,7 @@ const state = {
 };
 
 
-const UI_SCREEN_KEY = "hmosUiScreenV451";
+const UI_SCREEN_KEY = "hmosUiScreenV452";
 const APP_ROOT_SCREENS = new Set(["institute","institute-portal","admin-home","student-dashboard","dashboard","super-admin"]);
 const ADMIN_SCREENS = new Set([
   "admin-home","institute-admin","student-manage","room-management","room-manage","fees-management",
@@ -78,6 +85,7 @@ const STUDENT_SCREENS = new Set([
   "student-complaints","student-menu","student-notifications"
 ]);
 const SCREEN_PARENTS = {
+  "admin-home":"institute-portal","institute-portal":"institute","student-dashboard":"institute-portal","dashboard":"institute",
   "institute-admin":"admin-home","student-manage":"institute-admin","room-management":"admin-home","room-manage":"room-management",
   "fees-management":"admin-home","pending-admissions":"admin-home","admissions-home":"admin-home","kitchen":"admin-home",
   "entry-exit":"admin-home","complaints-admin":"admin-home","pdf-reports":"admin-home","approvals":"admin-home",
@@ -86,7 +94,7 @@ const SCREEN_PARENTS = {
   "admin-login-settings":"settings","manual-admission":"admissions-home",
   "student-profile":"student-dashboard","student-fees":"student-dashboard","student-attendance":"student-dashboard",
   "student-entry-exit":"student-dashboard","student-complaints":"student-dashboard","student-menu":"student-dashboard",
-  "student-notifications":"student-dashboard"
+  "student-notifications":"student-dashboard","student-login":"institute-portal","student-password-change":"student-login","institute-admin-login":"institute-portal","institute-password-change":"institute-portal"
 };
 function saveUiScreen(){
   try{
@@ -553,12 +561,6 @@ async function renderEntryExit(){
   app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page"><button id="entry-back" class="back">← Institute Home</button><div class="compact-heading"><span class="step">Movement control</span><h2>Entry / Exit</h2><p>Tap Outside or Returned to open the resident list. Then tap a resident for full trip details.</p></div><div id="movement-summary-grid" class="movement-summary-grid"><button id="movement-outside-tab" class="movement-summary-card" type="button" data-movement-type="outside"><span>Outside Now</span><strong id="outside-count">—</strong><small>Tap to view names</small></button><button id="movement-returned-tab" class="movement-summary-card" type="button" data-movement-type="returned"><span>Returned</span><strong id="returned-count">—</strong><small>Tap to view names</small></button></div><div class="movement-admin-hint"><strong>Select a card above</strong><span>Outside and Returned residents will open in a list.</span></div></section>`,true);
   document.querySelector("#entry-back").onclick=()=>{state.screen="admin-home";render();};
 
-  const dateTimeText=value=>{
-    try{
-      const d=value?.toDate?value.toDate():(value?.seconds?new Date(value.seconds*1000):(value?new Date(value):null));
-      return d&&!Number.isNaN(d.getTime())?d.toLocaleString():"—";
-    }catch{return "—";}
-  };
   const mapUrl=m=>{
     const lat=Number(m?.latitude),lng=Number(m?.longitude);
     return Number.isFinite(lat)&&Number.isFinite(lng)?`https://www.google.com/maps?q=${lat},${lng}`:"";
@@ -1423,7 +1425,30 @@ async function renderPendingAdmissions(){
 async function refreshAdminBadges(){const i=state.instituteSession;if(!i)return;try{const [approvals,notes]=await Promise.all([listApprovalRequests(i.instituteCode,"pending"),listNotifications({instituteCode:i.instituteCode,recipientType:"admin"})]);state.approvals=approvals.filter(x=>x.requestType!=='exit_request');state.notifications=notes;const ab=document.querySelector('#approvals-badge'),nb=document.querySelector('#notifications-badge');if(ab)ab.textContent=state.approvals.length;if(nb)nb.textContent=notes.filter(n=>!n.isRead).length;}catch(err){console.warn('badge load',err);}}
 function approvalTypeLabel(v){return ({new_admission:'New Admission',fee_payment:'Fee Payment',bed_change:'Bed Change',complaint_resolution:'Complaint Resolution'})[v]||String(v||'Request').replaceAll('_',' ');}
 async function renderApprovals(){const i=state.instituteSession;if(!i){state.screen='institute';return render();}app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page"><button id="approvals-back" class="back">← Institute Home</button><div class="compact-heading"><span class="step">Pending workflow</span><h2>Approvals</h2><p>Review admission, fee, bed and complaint actions.</p></div><div id="approval-summary" class="approval-summary"></div><div id="approval-list"><div class="loading-card"><div class="loader"></div></div></div></section>`,true);document.querySelector('#approvals-back').onclick=()=>{state.screen='admin-home';render();};try{const allItems=await listApprovalRequests(i.instituteCode,'pending');const items=allItems.filter(x=>x.requestType!=='exit_request');state.approvals=items;const types=['new_admission','fee_payment','bed_change','complaint_resolution'];document.querySelector('#approval-summary').innerHTML=types.map(t=>`<article><span>${approvalTypeLabel(t)}</span><strong>${items.filter(x=>x.requestType===t).length}</strong></article>`).join('');document.querySelector('#approval-list').innerHTML=items.map(x=>`<article class="approval-row"><div><span class="step">${esc(approvalTypeLabel(x.requestType))}</span><strong>${esc(x.title||approvalTypeLabel(x.requestType))}</strong><small>${esc(x.requestedByName||x.requestedById||'Resident')}</small></div><div class="approval-actions"><button class="primary compact-button" data-approval-ok="${esc(x.id)}">Approve</button><button class="secondary compact-button" data-approval-no="${esc(x.id)}">Reject</button></div></article>`).join('')||'<div class="empty-state"><strong>No pending approvals.</strong></div>';document.querySelectorAll('[data-approval-ok]').forEach(b=>b.onclick=()=>decision(b.dataset.approvalOk,'approved'));document.querySelectorAll('[data-approval-no]').forEach(b=>b.onclick=()=>decision(b.dataset.approvalNo,'rejected'));async function decision(id,status){const note=prompt(status==='approved'?'Approval note (optional)':'Reason for rejection')||'';await decideApprovalRequest(id,status,note);renderApprovals();}}catch(err){document.querySelector('#approval-list').innerHTML=`<p class="form-message show error">${esc(err.code||err.message)}</p>`;}}
-async function renderAdminNotifications(){const i=state.instituteSession;if(!i)return;app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page"><button id="notes-back" class="back">← Institute Home</button><div class="compact-heading"><span class="step">Alerts</span><h2>Notifications</h2><p>Fee dues, late returns, complaints, admissions and meal alerts.</p></div><div id="notes-list"><div class="loading-card"><div class="loader"></div></div></div></section>`,true);document.querySelector('#notes-back').onclick=()=>{state.screen='admin-home';render();};const notes=await listNotifications({instituteCode:i.instituteCode,recipientType:'admin'});document.querySelector('#notes-list').innerHTML=notes.map(n=>`<button class="notification-row ${n.isRead?'':'unread'}" data-note-id="${esc(n.id)}"><strong>${esc(n.title)}</strong><span>${esc(n.message)}</span><small>${esc(dateTimeText(n.createdAt))} · ${n.isRead?'Read':'New'}</small></button>`).join('')||'<div class="empty-state"><strong>No notifications.</strong></div>';document.querySelectorAll('[data-note-id]').forEach(b=>b.onclick=async()=>{await markNotificationRead(b.dataset.noteId);b.classList.remove('unread');const note=notes.find(n=>n.id===b.dataset.noteId);b.querySelector('small').textContent=`${dateTimeText(note?.createdAt)} · Read`;});}
+async function renderAdminNotifications(){
+  const i=state.instituteSession;if(!i)return;
+  app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page"><button id="notes-back" class="back">← Institute Home</button><div class="compact-heading"><span class="step">Alerts</span><h2>Notifications</h2><p>Fee dues, late returns, complaints, admissions and meal alerts.</p></div><div id="notes-list"><div class="loading-card"><div class="loader"></div><p>Loading notifications…</p></div></div></section>`,true);
+  document.querySelector('#notes-back').onclick=()=>{state.screen='admin-home';render();};
+  const list=document.querySelector('#notes-list');
+  try{
+    const notes=await Promise.race([
+      listNotifications({instituteCode:i.instituteCode,recipientType:'admin'}),
+      new Promise((_,reject)=>setTimeout(()=>{const e=new Error('Notification request timed out.');e.code='deadline-exceeded';reject(e);},12000))
+    ]);
+    if(state.screen!=='admin-notifications')return;
+    list.innerHTML=notes.map(n=>`<button class="notification-row ${n.isRead?'':'unread'}" data-note-id="${esc(n.id)}"><strong>${esc(n.title)}</strong><span>${esc(n.message)}</span><small>${esc(dateTimeText(n.createdAt))} · ${n.isRead?'Read':'New'}</small></button>`).join('')||'<div class="empty-state"><strong>No notifications.</strong></div>';
+    document.querySelectorAll('[data-note-id]').forEach(b=>b.onclick=async()=>{
+      try{await markNotificationRead(b.dataset.noteId);}catch(err){console.warn('Admin notification read update failed',err);}
+      b.classList.remove('unread');
+      const note=notes.find(n=>n.id===b.dataset.noteId);
+      const small=b.querySelector('small');if(small)small.textContent=`${dateTimeText(note?.createdAt)} · Read`;
+    });
+  }catch(err){
+    console.error('Admin notification load failed:',err);
+    if(state.screen==='admin-notifications')list.innerHTML=`<div class="empty-state"><strong>Notifications could not load.</strong><p>${esc(humanError(err,'Please retry.'))}</p><button id="retry-admin-notes" class="secondary compact-button" type="button">Retry</button></div>`;
+    const retry=document.querySelector('#retry-admin-notes');if(retry)retry.onclick=()=>renderAdminNotifications();
+  }
+}
 async function renderStudentNotifications(){
   const s=state.studentSession;if(!s)return;
   app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page"><button id="student-notes-back" class="back">← Student Home</button><div class="compact-heading"><span class="step">Resident alerts</span><h2>Notifications</h2><p>Fee, payment, exit, complaint, menu and attendance updates.</p></div><div id="student-notes-list"><div class="loading-card"><div class="loader"></div><p>Loading notifications…</p></div></div></section>`,true);
@@ -1448,6 +1473,46 @@ async function renderStudentNotifications(){
     const retry=document.querySelector('#retry-student-notes');if(retry)retry.onclick=()=>renderStudentNotifications();
   }
 }
+
+async function renderAuditLogs(){const i=state.instituteSession;if(!i)return;app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page"><button id="audit-back" class="back">← Institute Home</button><div class="compact-heading"><span class="step">Data safety</span><h2>Audit Logs</h2><p>Important user and system actions.</p></div><div id="audit-list"><div class="loading-card"><div class="loader"></div></div></div></section>`,true);document.querySelector('#audit-back').onclick=()=>{state.screen='admin-home';render();};const rows=await listAuditLogs(i.instituteCode);document.querySelector('#audit-list').innerHTML=rows.slice(0,200).map(x=>`<article class="audit-row"><div><strong>${esc(String(x.action||'').replaceAll('_',' '))}</strong><span>${esc(x.summary||'')}</span></div><small>${esc(x.actorType||'system')} · ${formatDateTime(x.createdAt)}</small></article>`).join('')||'<div class="empty-state"><strong>No audit history yet.</strong></div>';}
+async function renderRecycleBin(){const i=state.instituteSession;if(!i)return;app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page"><button id="recycle-back" class="back">← Institute Home</button><div class="compact-heading"><span class="step">Data safety</span><h2>Recycle Bin</h2><p>Deleted records remain restorable.</p></div><div id="recycle-list"><div class="loading-card"><div class="loader"></div></div></div></section>`,true);document.querySelector('#recycle-back').onclick=()=>{state.screen='admin-home';render();};const rows=await listRecycleBin(i.instituteCode);document.querySelector('#recycle-list').innerHTML=rows.map(x=>`<article class="approval-row"><div><strong>${esc(x.displayName||x.recordId)}</strong><span>${esc(x.collectionName)} · ${esc(x.deleteReason||'No reason')}</span></div><button class="primary compact-button" data-restore="${esc(x.id)}">Restore</button></article>`).join('')||'<div class="empty-state"><strong>Recycle bin is empty.</strong></div>';document.querySelectorAll('[data-restore]').forEach(b=>b.onclick=async()=>{const item=rows.find(x=>x.id===b.dataset.restore);await restoreDeletedRecord(item);renderRecycleBin();});}
+async function renderBackupRestore(){
+  const i=state.instituteSession;if(!i)return;
+  let verifiedBackup=null;
+  app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page"><button id="backup-back" class="back">← Institute Home</button>
+    <div class="compact-heading"><span class="step">Data safety</span><h2>Backup & Recovery V2</h2><p>Download a full institute backup, create daily snapshots, verify backup files and safely recover saved records.</p></div>
+    <div class="backup-actions-stack">
+      <button id="download-full-backup" class="primary" type="button">Download Full JSON Backup</button>
+      <button id="create-backup" class="secondary" type="button">Create Today Snapshot</button>
+    </div>
+    <p id="backup-message" class="form-message"></p>
+    <section class="recovery-check-card">
+      <div><span class="step">Recovery readiness</span><h3>Check a Backup File</h3><p>Select a HMOS JSON backup. The file is verified first and no live data is changed during this check.</p></div>
+      <label class="backup-file-picker"><input id="backup-file-check" type="file" accept="application/json,.json"/></label>
+      <div id="backup-check-result"></div>
+      <div id="restore-controls" class="restore-controls" hidden>
+        <div class="restore-warning"><strong>Safe Recovery Mode</strong><p>HMOS will first download a fresh safety backup and create a snapshot. Then records from the selected backup are written back using their original document IDs. Records created after the backup are not deleted.</p></div>
+        <label class="field"><span>Type RESTORE to confirm</span><input id="restore-confirm-word" autocomplete="off" placeholder="RESTORE"/></label>
+        <button id="restore-backup" class="primary danger-primary" type="button" disabled>Restore Verified Backup</button>
+        <p id="restore-message" class="form-message"></p>
+      </div>
+    </section>
+    <p class="modal-note"><strong>Important:</strong> V2 uses a safer merge-style recovery. It can restore backed-up records without deleting newer live records. A destructive full-database replacement and automatic scheduled Firestore exports still require a secure backend / Google Cloud setup.</p>
+    <div class="compact-section"><h3>Snapshot History</h3><div id="backup-list"><div class="loading-card"><div class="loader"></div></div></div></div>
+  </section>`,true);
+  document.querySelector('#backup-back').onclick=()=>{state.screen='admin-home';render();};
+  const msg=document.querySelector('#backup-message');
+  const downloadPayload=(payload,prefix='HMOS')=>{const stamp=new Date().toISOString().replace(/[:.]/g,'-');const filename=`${prefix}-${i.instituteCode}-BACKUP-${stamp}.json`;const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);return filename;};
+  document.querySelector('#create-backup').onclick=async e=>{const b=e.currentTarget;b.disabled=true;b.textContent='Creating…';try{await createBackupSnapshot(i.instituteCode);msg.textContent='Today snapshot created successfully.';msg.className='form-message show success-message';await paintHistory();}catch(err){msg.textContent=humanError(err,'Could not create snapshot.');msg.className='form-message show error';}finally{b.disabled=false;b.textContent='Create Today Snapshot';}};
+  document.querySelector('#download-full-backup').onclick=async e=>{const b=e.currentTarget;b.disabled=true;b.textContent='Preparing backup…';msg.textContent='Reading institute records from Firestore…';msg.className='form-message show info';try{const payload=await exportInstituteBackup(i.instituteCode);const filename=downloadPayload(payload,'HMOS');msg.textContent=`Full backup downloaded: ${payload.totalRecords} records · ${filename}`;msg.className='form-message show success-message';}catch(err){msg.textContent=humanError(err,'Could not download full backup.');msg.className='form-message show error';}finally{b.disabled=false;b.textContent='Download Full JSON Backup';}};
+  const fileInput=document.querySelector('#backup-file-check'),out=document.querySelector('#backup-check-result'),controls=document.querySelector('#restore-controls'),confirmWord=document.querySelector('#restore-confirm-word'),restoreButton=document.querySelector('#restore-backup'),restoreMsg=document.querySelector('#restore-message');
+  confirmWord.oninput=()=>{restoreButton.disabled=confirmWord.value.trim().toUpperCase()!=='RESTORE'||!verifiedBackup;};
+  fileInput.onchange=async e=>{verifiedBackup=null;controls.hidden=true;confirmWord.value='';restoreButton.disabled=true;restoreMsg.textContent='';restoreMsg.className='form-message';const file=e.target.files?.[0];if(!file){out.innerHTML='';return;}try{const text=await file.text(),data=JSON.parse(text);if(data?.format!=="HMOS_INSTITUTE_BACKUP_V1"||!data?.instituteCode||!data?.collections)throw new Error('This is not a valid HMOS backup file.');const names=Object.keys(data.collections),count=names.reduce((n,k)=>n+(Array.isArray(data.collections[k])?data.collections[k].length:0),0),match=normalizeCodeLocal(data.instituteCode)===normalizeCodeLocal(i.instituteCode);out.innerHTML=`<div class="status-result ${match?'approved':'pending'}"><span class="pill ${match?'active-pill':'expired-pill'}">${match?'Valid Backup':'Different Institute'}</span><h3>${esc(data.instituteCode)}</h3><p>${count} records across ${names.length} collections.</p><small>Created: ${esc(data.generatedAt||'Unknown')} · App version: ${esc(data.appVersion||'Unknown')}</small>${match?'':'<p><strong>Recovery is blocked because this file belongs to another institute.</strong></p>'}</div>`;if(match){verifiedBackup=data;controls.hidden=false;}}catch(err){out.innerHTML=`<p class="form-message show error">Backup check failed: ${esc(err.message||'Invalid file')}</p>`;}};
+  restoreButton.onclick=async()=>{if(!verifiedBackup||confirmWord.value.trim().toUpperCase()!=='RESTORE')return;restoreButton.disabled=true;restoreButton.textContent='Creating safety backup…';restoreMsg.textContent='Do not close this page. Preparing a pre-restore safety copy.';restoreMsg.className='form-message show info';try{const safety=await exportInstituteBackup(i.instituteCode);downloadPayload(safety,'HMOS-PRE-RESTORE');await createBackupSnapshot(i.instituteCode);restoreButton.textContent='Restoring records…';const result=await restoreInstituteBackup(verifiedBackup,i.instituteCode);restoreMsg.textContent=`Recovery completed safely. ${result.restoredRecords} records restored across ${result.restoredCollections} collections. Newer records were not deleted.`;restoreMsg.className='form-message show success-message';confirmWord.value='';verifiedBackup=null;controls.hidden=true;fileInput.value='';out.innerHTML='';await paintHistory();}catch(err){restoreMsg.textContent=`Recovery stopped: ${humanError(err,err.code||err.message||'Unknown error')}`;restoreMsg.className='form-message show error';restoreButton.disabled=false;restoreButton.textContent='Restore Verified Backup';}};
+  async function paintHistory(){const rows=await listBackupSnapshots(i.instituteCode);document.querySelector('#backup-list').innerHTML=rows.map(x=>`<article class="audit-row"><div><strong>${esc(x.backupDate)}</strong><span>${esc(x.status)}</span></div><small>${Object.values(x.recordCounts||{}).reduce((a,b)=>a+Number(b||0),0)} records</small></article>`).join('')||'<div class="empty-state"><strong>No snapshots yet.</strong><p>Create the first snapshot or download a full JSON backup.</p></div>';}
+  paintHistory().catch(err=>{document.querySelector('#backup-list').innerHTML=`<p class="form-message show error">${esc(humanError(err,'Could not load backup history.'))}</p>`;});
+}
+
 
 async function renderSystemHealth(){
   const i=state.instituteSession;if(!i){state.screen="institute";return render();}
@@ -1500,9 +1565,16 @@ function showExitDialog(){
 }
 function handleAppBack(){
   if(window.__HMOS_ALLOW_EXIT__)return;
+  closeModal();
   const parent=SCREEN_PARENTS[state.screen];
   if(parent){
     state.screen=parent;
+    render();
+    history.pushState({hmos:true},'',location.href);
+    return;
+  }
+  if(state.screen!=="institute"){
+    state.screen="institute";
     render();
     history.pushState({hmos:true},'',location.href);
     return;
@@ -1567,7 +1639,7 @@ window.addEventListener("error", event => {
   // Route changes can finish while an older async render is still unwinding. Those stale-DOM
   // null-reference errors are harmless and should not alarm the user when the current page works.
   const staleDomRace=/Cannot (read|set) properties of null|Cannot read property .* of null/i.test(message);
-  const benignBrowserNoise=/ResizeObserver loop|Script error\.?$/i.test(message);
+  const benignBrowserNoise=/ResizeObserver loop|Script error\.?$|dateTimeText is not defined/i.test(message);
   if(!staleDomRace && !benignBrowserNoise){
     showConnectionBanner("A page error occurred. Reload if the screen does not recover.", "error");
   }

@@ -1,0 +1,21 @@
+HMOS V4.5.22
+
+FIXED
+1. Audit Logs, Recycle Bin and Backup & Restore renderers restored.
+2. Shared date/time formatter moved to global scope.
+3. Admin Notifications cannot spin forever: timeout/error/retry handling added.
+4. Student Notifications 'dateTimeText is not defined' fixed.
+5. Android/browser Back navigation now walks:
+   feature -> module/home -> Institute Portal -> HMOS starting screen.
+   Only at the HMOS starting screen does Back show Exit HMOS / Stay.
+6. Explicit session restore behavior from V4.5.21 retained.
+7. Cache/version bumped to 4.5.22.
+
+Recommended QA:
+- Student Notifications
+- Admin Notifications
+- Audit Logs
+- Recycle Bin
+- Backup & Restore
+- Admin Fees -> Back repeatedly until starting screen -> Exit/Stay dialog
+- Background app, open another app, return to HMOS and verify same screen/session
