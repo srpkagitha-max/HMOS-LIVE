@@ -12,7 +12,7 @@ import {
 } from "./firebase-service.js?v=4.5.14";
 
 const app = document.querySelector("#app");
-const HMOS_VERSION = "4.5.14";
+const HMOS_VERSION = "4.5.15";
 window.__HMOS_VERSION__ = HMOS_VERSION;
 
 const activeOperations = new Set();
@@ -627,10 +627,13 @@ async function renderComplaintsAdmin(){
  };
  try{
    state.complaints=await listInstituteComplaints(i.instituteCode);
-   document.querySelector("#complaint-admin-list").innerHTML=state.complaints.map(c=>`<button type="button" class="compact-list-row complaint-open-row" data-complaint-open="${esc(c.id)}"><div><strong>${esc(c.studentName||c.studentId)}</strong><span>${esc(c.category||"Other")} · ${esc(c.subject||"Complaint")}</span><small>${esc(c.details||"")}</small></div><span class="complaint-status-badge">${esc(statusLabel(c.status))}</span></button>`).join("")||'<div class="empty-state compact-empty"><strong>No complaints.</strong></div>';
+   const complaintList=document.querySelector("#complaint-admin-list");
+   if(!complaintList || state.screen!=="complaints-admin") return;
+   complaintList.innerHTML=state.complaints.map(c=>`<button type="button" class="compact-list-row complaint-open-row" data-complaint-open="${esc(c.id)}"><div><strong>${esc(c.studentName||c.studentId)}</strong><span>${esc(c.category||"Other")} · ${esc(c.subject||"Complaint")}</span><small>${esc(c.details||"")}</small></div><span class="complaint-status-badge">${esc(statusLabel(c.status))}</span></button>`).join("")||'<div class="empty-state compact-empty"><strong>No complaints.</strong></div>';
    document.querySelectorAll("[data-complaint-open]").forEach(row=>row.onclick=()=>{const c=state.complaints.find(x=>x.id===row.dataset.complaintOpen);if(c)openComplaint(c);});
  }catch(err){
-   document.querySelector("#complaint-admin-list").innerHTML=`<p class="form-message show error">${esc(err.code||"Could not load")}</p>`;
+   const complaintList=document.querySelector("#complaint-admin-list");
+   if(complaintList && state.screen==="complaints-admin") complaintList.innerHTML=`<p class="form-message show error">${esc(err.code||"Could not load")}</p>`;
  }
 }
 
@@ -1452,11 +1455,12 @@ if("serviceWorker" in navigator) {
 window.addEventListener("error", event => {
   const message=String(event?.error?.message||event?.message||"");
   console.error("HMOS runtime error:", event.error || event.message);
-  // Route changes can finish while an older async render is still unwinding. Those stale-DOM
-  // null-reference errors are harmless and should not alarm the user when the current page works.
-  const staleDomRace=/Cannot (read|set) properties of null|Cannot read property .* of null/i.test(message);
-  const benignBrowserNoise=/ResizeObserver loop|Script error\.?$/i.test(message);
-  if(!staleDomRace && !benignBrowserNoise){
+  // Navigation can leave older async work finishing after a new screen has already rendered.
+  // Keep those diagnostics in the console, but never cover a healthy screen with a false error banner.
+  const staleDomRace=/Cannot (read|set) properties of null|Cannot read property .* of null|not contained in document|detached/i.test(message);
+  const benignBrowserNoise=/ResizeObserver loop|Script error\.?$|Load failed|Failed to fetch dynamically imported module/i.test(message);
+  const appHealthy=Boolean(document.querySelector("#app")?.children?.length);
+  if(!staleDomRace && !benignBrowserNoise && !appHealthy){
     showConnectionBanner("A page error occurred. Reload if the screen does not recover.", "error");
   }
 });

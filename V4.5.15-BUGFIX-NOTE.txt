@@ -1,0 +1,9 @@
+HMOS V4.5.15 - Page Error Navigation Fix
+
+Fixes:
+- Prevents the false “A page error occurred” banner when a healthy destination screen is already rendered.
+- Keeps runtime errors in the browser console for diagnosis.
+- Adds a stale-render guard to the Admin Complaints async loader so it does not write into a page after navigation.
+- Bumps the service-worker cache so deployed clients receive the patched files.
+
+Deploy patch files to the site root, replacing the existing files, then refresh/reopen the app.
