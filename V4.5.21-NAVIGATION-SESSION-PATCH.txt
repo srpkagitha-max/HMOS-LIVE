@@ -1,0 +1,14 @@
+HMOS V4.5.21 — Navigation, Resume & Notification Stability
+
+1. Android/browser Back now follows the HMOS screen hierarchy.
+   Example: Fees -> Institute Home. Back again at Institute Home -> Exit HMOS / Stay dialog.
+2. Student pages return to Student Home before exit prompt.
+3. Current screen is stored in sessionStorage while the app/browser context remains alive.
+   Switching to another app and returning resumes the same HMOS screen.
+4. Student session is restored after an OS/browser reload while the same session context survives.
+5. Explicit logout clears the saved current screen.
+6. Student Notifications no longer remain on an endless spinner; timeout/error shows Retry.
+7. Version/cache bumped to 4.5.21.
+
+Note: As a web/PWA app, Android/Chrome ultimately controls process lifecycle. A fresh browsing context
+after the app/tab is truly closed starts from the normal entry flow; backgrounding does not.
