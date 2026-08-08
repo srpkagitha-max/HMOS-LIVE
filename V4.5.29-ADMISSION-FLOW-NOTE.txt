@@ -1,0 +1,19 @@
+HMOS V4.5.29 — Room-First Admission Fee Flow
+
+Changes:
+1. Bed Selection is intended to appear before Fee Details.
+2. Selecting a room/bed automatically applies that room's sharing-wise fee.
+3. Total Fees is read-only/locked so it cannot be accidentally changed.
+4. Amount Paying Now stays editable.
+5. Balance updates automatically.
+6. Bed summary shows Room / Sharing Type / Bed / Occupancy / Fee.
+7. Admission cannot continue without a selected bed.
+8. Admission cannot continue if the selected room's sharing fee is not configured.
+9. Existing sharing-wise fee settings from V4.5.26+ remain the single fee source.
+
+Recommended QA:
+- Set Single / 2 / 3 / 4 Sharing fees.
+- Open admission form.
+- Select a 2 Sharing bed and verify total fee auto-fills and is locked.
+- Change Amount Paying Now and verify Balance.
+- Try submitting without a bed and confirm it is blocked.

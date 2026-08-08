@@ -647,3 +647,25 @@ html,body{max-width:100%;overflow-x:hidden}
 /* HMOS V4.5.26 — Sharing room support */
 .fee-box .form-help{margin:0 0 12px;color:#6b7b8c}
 .cinema-room-card small{display:block;line-height:1.25}
+
+
+/* HMOS V4.5.29 — admission room-first fee flow */
+.room-fee-summary{
+  margin-top:12px;
+  padding:14px 16px;
+  border:1px solid #d9e5ef;
+  border-radius:16px;
+  background:#f6faff;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.room-fee-summary strong{color:#0e2744;font-size:15px}
+.room-fee-summary span{color:#6b7b8c;font-size:12px}
+.fee-source-note{display:block;margin:-2px 0 8px;color:#6b7b8c;font-size:12px;line-height:1.35}
+input[readonly]{
+  background:#eef4f8!important;
+  color:#20364d!important;
+  font-weight:800;
+  cursor:not-allowed;
+}
