@@ -643,3 +643,7 @@ html,body{max-width:100%;overflow-x:hidden}
     margin:0;
   }
 }
+
+/* HMOS V4.5.26 — Sharing room support */
+.fee-box .form-help{margin:0 0 12px;color:#6b7b8c}
+.cinema-room-card small{display:block;line-height:1.25}

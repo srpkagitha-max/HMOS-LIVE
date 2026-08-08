@@ -740,7 +740,11 @@ export async function createRoom(input, instituteSession) {
   const instituteCode = normalizeCode(instituteSession?.instituteCode);
   const instituteId = cleanText(instituteSession?.instituteId);
   const roomNumber = cleanText(input.roomNumber).toUpperCase();
-  const capacity = Number(input.capacity || 0);
+  let capacity = Number(input.capacity || 0);
+  const rawSharing=cleanText(input.sharingType)||String(capacity||"");
+  const sharingCapacity=rawSharing==="custom"?capacity:Number(rawSharing||capacity||0);
+  if(rawSharing!=="custom"&&sharingCapacity>0)capacity=sharingCapacity;
+  const sharingType=rawSharing==="custom"?"custom":`${capacity}-sharing`;
   if (!instituteCode || !instituteId || !roomNumber || capacity < 1 || capacity > 50) {
     throw Object.assign(new Error("Invalid room details"), { code: "invalid-room-details" });
   }
@@ -748,11 +752,12 @@ export async function createRoom(input, instituteSession) {
   const ref = doc(db, "rooms", roomId);
   const existing = await withTimeout(getDoc(ref), 9000, "room-read-timeout");
   if (existing.exists()) throw Object.assign(new Error("Room already exists"), { code: "room-exists" });
-  const beds = Array.from({length: capacity}, (_,i) => ({ bedNumber: String(i+1), status: "vacant", studentId: "", studentName: "" }));
+  const bedLabel=i=>capacity<=26?String.fromCharCode(65+i):String(i+1);
+  const beds = Array.from({length: capacity}, (_,i) => ({ bedNumber: bedLabel(i), slotNumber:i+1, status: "vacant", studentId: "", studentName: "" }));
   const payload = {
     roomId, instituteId, instituteCode, instituteName: cleanText(instituteSession.instituteName),
     building: cleanText(input.building) || "Main Building", floor: cleanText(input.floor) || "Ground Floor",
-    roomNumber, roomType: cleanText(input.roomType) || "Non-AC", capacity, occupiedBeds: 0,
+    roomNumber, roomType: cleanText(input.roomType) || "Non-AC", sharingType, sharingCapacity: capacity, capacity, occupiedBeds: 0,
     beds, status: "active", createdAt: serverTimestamp(), updatedAt: serverTimestamp()
   };
   await withTimeout(setDoc(ref, payload), 12000, "room-create-timeout");
@@ -1023,9 +1028,9 @@ export async function submitStudentFeePaymentRequest(input){const studentId=norm
 export async function saveAdmissionFeeSettings(input){
   const instituteCode=normalizeCode(input.instituteCode);
   if(!instituteCode)throw Object.assign(new Error("Institute code missing"),{code:"institute-session-missing"});
-  const data={instituteCode,instituteId:cleanText(input.instituteId),payeeName:cleanText(input.payeeName),upiId:cleanText(input.upiId),paymentContact:cleanText(input.paymentContact).replace(/\D/g,""),paymentQrDataUrl:String(input.paymentQrDataUrl||""),defaultTotalFees:Number(input.defaultTotalFees||0),shareInstituteId:cleanText(input.shareInstituteId)||instituteCode,shareInstitutePassword:String(input.shareInstitutePassword||""),updatedAt:serverTimestamp()};
+  const data={instituteCode,instituteId:cleanText(input.instituteId),payeeName:cleanText(input.payeeName),upiId:cleanText(input.upiId),paymentContact:cleanText(input.paymentContact).replace(/\D/g,""),paymentQrDataUrl:String(input.paymentQrDataUrl||""),defaultTotalFees:Number(input.defaultTotalFees||0),singleSharingFees:Number(input.singleSharingFees||0),twoSharingFees:Number(input.twoSharingFees||0),threeSharingFees:Number(input.threeSharingFees||0),fourSharingFees:Number(input.fourSharingFees||0),shareInstituteId:cleanText(input.shareInstituteId)||instituteCode,shareInstitutePassword:String(input.shareInstitutePassword||""),updatedAt:serverTimestamp()};
   await setDoc(doc(db,"instituteBranding",instituteCode),data,{merge:true});
-  await setDoc(doc(db,"instituteAccess",instituteCode),{payeeName:data.payeeName,upiId:data.upiId,paymentContact:data.paymentContact,paymentQrDataUrl:data.paymentQrDataUrl,defaultTotalFees:data.defaultTotalFees,shareInstituteId:data.shareInstituteId,shareInstitutePassword:data.shareInstitutePassword,updatedAt:serverTimestamp()},{merge:true});
+  await setDoc(doc(db,"instituteAccess",instituteCode),{payeeName:data.payeeName,upiId:data.upiId,paymentContact:data.paymentContact,paymentQrDataUrl:data.paymentQrDataUrl,defaultTotalFees:data.defaultTotalFees,singleSharingFees:data.singleSharingFees,twoSharingFees:data.twoSharingFees,threeSharingFees:data.threeSharingFees,fourSharingFees:data.fourSharingFees,shareInstituteId:data.shareInstituteId,shareInstitutePassword:data.shareInstitutePassword,updatedAt:serverTimestamp()},{merge:true});
   return {...data,updatedAt:new Date()};
 }
 

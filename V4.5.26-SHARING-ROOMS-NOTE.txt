@@ -1,0 +1,18 @@
+HMOS V4.5.26 — Sharing Rooms & Beds
+
+Added:
+1. Room creation supports Single, 2 Sharing, 3 Sharing, 4 Sharing and Custom Capacity.
+2. Capacity is automatically derived from the selected sharing type.
+3. New rooms use bed/slot labels A, B, C, D... for cleaner shared-room allotment.
+4. Room cards and admission selectors display sharing type.
+5. Admission Fees Settings includes optional Single / 2 / 3 / 4 Sharing fee defaults.
+6. Selecting a room during admission can auto-fill the corresponding sharing fee.
+7. Existing rooms and existing numeric bed numbers remain compatible.
+8. Dashboard vacant-bed calculations continue to count individual bed/slot availability.
+
+Recommended test:
+- Create a 2 Sharing room and verify A/B slots.
+- Create a 3 Sharing room and verify A/B/C slots.
+- Set 2 Sharing and 3 Sharing fee defaults.
+- Start a manual/online admission, select a shared room and verify fee auto-fill.
+- Allot multiple residents to different slots in the same room.
