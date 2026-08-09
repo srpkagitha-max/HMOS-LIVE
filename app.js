@@ -9,11 +9,11 @@ import {
   submitStudentFeePaymentRequest, getInstituteBranding, saveInstituteBranding, saveAdmissionFeeSettings,
   createApprovalRequest, listApprovalRequests, decideApprovalRequest, createNotification, listNotifications, markNotificationRead, createAuditLog, listAuditLogs, softDeleteRecord, listRecycleBin, restoreDeletedRecord, createBackupSnapshot, listBackupSnapshots, exportInstituteBackup, restoreInstituteBackup, findDuplicateAdmissions,
   loginInstituteAdmin, changeInstituteAdminCredentials, checkAdmissionStatus, getSystemHealth, getInstituteLiveMetrics, reconcileResidentBedAssignments
-} from "./firebase-service.js?v=4.5.33";
+} from "./firebase-service.js?v=4.5.34";
 
 const app = document.querySelector("#app");
 app.addEventListener("click",e=>{const b=e.target.closest("[data-toggle-password]");if(!b)return;const input=document.getElementById(b.dataset.togglePassword);if(!input)return;const show=input.type==="password";input.type=show?"text":"password";b.textContent=show?"Hide":"Show";b.setAttribute("aria-label",show?"Hide password":"Show password");});
-const HMOS_VERSION = "4.5.33";
+const HMOS_VERSION = "4.5.34";
 window.__HMOS_VERSION__ = HMOS_VERSION;
 
 const activeOperations = new Set();
@@ -301,82 +301,80 @@ function renderInstituteAdminHome(){
   const i=state.instituteSession;
   if(!i){state.screen="institute";return render();}
   app.innerHTML=shell(`<section class="card portal-card wide-card compact-admin-home">
-    <div class="compact-admin-top"><button id="admin-home-back" class="back" type="button">← Institute Portal</button><div><span class="step success-step">Admin Dashboard</span><h2>Admin Home</h2><p>${esc(i.instituteName)} · ${esc(i.instituteCode)}</p></div></div>
+    <div class="compact-admin-top simple-admin-top">
+      <button id="admin-home-back" class="back" type="button">← Institute Portal</button>
+      <div class="admin-home-title"><span class="step success-step">Admin Dashboard</span><h2>Admin Home</h2><p>${esc(i.instituteName)} · ${esc(i.instituteCode)}</p></div>
+      <button id="admin-header-notifications" class="header-notification-button" type="button" aria-label="Notifications">🔔 <span id="notifications-badge" class="live-badge">0</span></button>
+    </div>
+
     <section class="live-ops-panel" aria-live="polite">
-      <div class="live-ops-head"><div><span class="step">Live operations</span><h3>Today at a Glance</h3><p>Tap any card to open its live details.</p></div><button id="live-metrics-refresh" class="secondary compact-button" type="button">Refresh</button></div>
-      <div id="live-metrics-grid" class="live-metrics-grid tappable-live-metrics">
-        <button type="button" data-live-target="institute-admin"><span>Residents</span><strong>—</strong><small>Active · Tap to view</small></button>
-        <button type="button" data-live-target="pending-admissions"><span>Pending Admissions</span><strong>—</strong><small>Needs review · Tap to view</small></button>
-        <button type="button" data-live-target="entry-exit"><span>Outside</span><strong>—</strong><small>Not returned · Tap to view</small></button>
-        <button type="button" data-live-target="room-management"><span>Vacant Beds</span><strong>—</strong><small>Ready to allot · Tap to view</small></button>
-        <button type="button" data-live-target="fees-management"><span>Fee Due Today</span><strong>—</strong><small>Accounts · Tap to view</small></button>
-        <button type="button" data-live-target="complaints-admin"><span>Open Complaints</span><strong>—</strong><small>Needs action · Tap to view</small></button>
+      <div class="live-ops-head"><div><span class="step">Live operations</span><h3>Today at a Glance</h3><p>Live summary of today’s hostel activity.</p></div><button id="live-metrics-refresh" class="secondary compact-button" type="button">Refresh</button></div>
+      <div id="live-metrics-grid" class="live-metrics-grid">
+        <article><span>Residents</span><strong>—</strong><small>Active</small></article>
+        <article><span>Pending Admissions</span><strong>—</strong><small>Needs review</small></article>
+        <article><span>Outside</span><strong>—</strong><small>Not returned</small></article>
+        <article><span>Vacant Beds</span><strong>—</strong><small>Ready to allot</small></article>
+        <article><span>Fee Due Today</span><strong>—</strong><small>Accounts</small></article>
+        <article><span>Open Complaints</span><strong>—</strong><small>Needs action</small></article>
       </div>
       <p id="live-metrics-note" class="live-metrics-note">Loading live data…</p>
     </section>
-    <div class="admin-home-grid neat-admin-grid">
-      <button id="residents-card" class="admin-home-action"><strong>Residents</strong><small>Profiles & search</small></button>
-      <button id="admissions-card" class="admin-home-action"><strong>Admissions</strong><small>Forms & approvals</small></button>
-      <button id="beds-card" class="admin-home-action"><strong>Rooms & Beds</strong><small>Floors, rooms & beds</small></button>
-      <button id="kitchen-card" class="admin-home-action"><strong>Kitchen</strong><small>Menu & attendance</small></button>
-      <button id="fees-card" class="admin-home-action"><strong>Fees</strong><small>Payments & receipts</small></button>
-      <button id="entry-exit-card" class="admin-home-action"><strong>Entry / Exit</strong><small>Movement status</small></button>
-      <button id="complaints-admin-card" class="admin-home-action"><strong>Complaints</strong><small>Review & resolve</small></button>
-      <button id="approvals-card" class="admin-home-action badge-card"><strong>Approvals <span id="approvals-badge" class="live-badge">0</span></strong><small>Admissions, payments, beds & complaints</small></button>
-      <button id="notifications-card" class="admin-home-action badge-card"><strong>Notifications <span id="notifications-badge" class="live-badge">0</span></strong><small>Alerts and reminders</small></button>
-      <button id="audit-card" class="admin-home-action"><strong>Audit Logs</strong><small>User action history</small></button>
-      <button id="recycle-card" class="admin-home-action"><strong>Recycle Bin</strong><small>Restore deleted records</small></button>
-      <button id="backup-card" class="admin-home-action"><strong>Backup & Restore</strong><small>Daily snapshot history</small></button>
-      <button id="system-health-card" class="admin-home-action"><strong>System Health</strong><small>Network, Firebase and backup status</small></button>
-      <button id="settings-card" class="admin-home-action"><strong>Settings</strong><small>Dashboard and admission fees</small></button>
-      <button id="pdf-card" class="admin-home-action"><strong>Reports</strong><small>Reports & lists</small></button>
+
+    <div class="admin-home-grid neat-admin-grid simple-feature-grid">
+      <button id="residents-card" class="admin-home-action"><strong>Residents</strong><small>Profiles & resident management</small></button>
+      <button id="admissions-card" class="admin-home-action"><strong>Admissions</strong><small>Online, manual & pending admissions</small></button>
+      <button id="beds-card" class="admin-home-action"><strong>Rooms & Beds</strong><small>Floors, sharing rooms & beds</small></button>
+      <button id="fees-card" class="admin-home-action"><strong>Fees</strong><small>Payments, balances & receipts</small></button>
+      <button id="kitchen-card" class="admin-home-action"><strong>Kitchen</strong><small>Menu & meal attendance</small></button>
+      <button id="entry-exit-card" class="admin-home-action"><strong>Entry / Exit</strong><small>Resident movement status</small></button>
+      <button id="complaints-admin-card" class="admin-home-action"><strong>Complaints</strong><small>Review & resolve complaints</small></button>
+      <button id="pdf-card" class="admin-home-action"><strong>Reports</strong><small>Reports & printable lists</small></button>
+      <button id="system-safety-card" class="admin-home-action"><strong>System & Safety</strong><small>Audit, recycle, backup & health</small></button>
+      <button id="settings-card" class="admin-home-action"><strong>Settings</strong><small>Dashboard, fees & admin settings</small></button>
     </div>
   </section>`,true);
 
   const go=screen=>{state.screen=screen;render();};
   document.querySelector("#admin-home-back").onclick=()=>go("institute-portal");
+  document.querySelector("#admin-header-notifications").onclick=()=>go("admin-notifications");
   document.querySelector("#residents-card").onclick=()=>go("institute-admin");
   document.querySelector("#admissions-card").onclick=()=>go("admissions-home");
   document.querySelector("#beds-card").onclick=()=>go("room-management");
-  document.querySelector("#kitchen-card").onclick=()=>go("kitchen");
   document.querySelector("#fees-card").onclick=()=>go("fees-management");
+  document.querySelector("#kitchen-card").onclick=()=>go("kitchen");
   document.querySelector("#entry-exit-card").onclick=()=>go("entry-exit");
   document.querySelector("#complaints-admin-card").onclick=()=>go("complaints-admin");
-  document.querySelector("#approvals-card").onclick=()=>go("approvals");
-  document.querySelector("#notifications-card").onclick=()=>go("admin-notifications");
-  document.querySelector("#audit-card").onclick=()=>go("audit-logs");
-  document.querySelector("#recycle-card").onclick=()=>go("recycle-bin");
-  document.querySelector("#backup-card").onclick=()=>go("backup-restore");
-  document.querySelector("#system-health-card").onclick=()=>go("system-health");
-  document.querySelector("#settings-card").onclick=()=>go("settings");
   document.querySelector("#pdf-card").onclick=()=>go("pdf-reports");
-  document.querySelectorAll("[data-live-target]").forEach(card=>card.onclick=()=>go(card.dataset.liveTarget));
+  document.querySelector("#system-safety-card").onclick=()=>go("system-safety");
+  document.querySelector("#settings-card").onclick=()=>go("settings");
 
   const paintLiveMetrics = async () => {
-    const grid=document.querySelector("#live-metrics-grid"),note=document.querySelector("#live-metrics-note"),btn=document.querySelector("#live-metrics-refresh");
-    if(!grid)return;
-    if(btn){btn.disabled=true;btn.textContent="Refreshing…";}
-    grid.classList.add("is-loading");
+    const grid=document.querySelector("#live-metrics-grid"),note=document.querySelector("#live-metrics-note");
+    if(!grid||!note)return;
     try{
       const m=await getInstituteLiveMetrics(i.instituteCode);
-      const values=[m.residents,m.pendingAdmissions,m.outsideResidents,m.vacantBeds,m.feeDueToday,m.openComplaints];
-      grid.querySelectorAll("button strong").forEach((el,index)=>el.textContent=String(values[index]??0));
+      const values=[
+        [m.residents||0,"Active"],
+        [m.pendingAdmissions||0,"Needs review"],
+        [m.outside||0,"Not returned"],
+        [m.vacantBeds||0,"Ready to allot"],
+        [m.feeDueToday||0,"Accounts"],
+        [m.openComplaints||0,"Needs action"]
+      ];
+      [...grid.children].forEach((card,idx)=>{
+        const strong=card.querySelector("strong"),small=card.querySelector("small");
+        if(strong)strong.textContent=values[idx]?.[0]??0;
+        if(small)small.textContent=values[idx]?.[1]||"";
+      });
       note.textContent=`Outstanding fees: ₹${Number(m.outstandingAmount||0).toLocaleString("en-IN")} · ${m.pendingApprovals||0} pending approvals · Updated just now`;
-      note.classList.remove("metric-error");
     }catch(err){
-      note.textContent=`Live summary unavailable. ${humanError(err,"Tap Refresh to try again.")}`;
-      note.classList.add("metric-error");
-    }finally{
-      grid.classList.remove("is-loading");
-      if(btn){btn.disabled=false;btn.textContent="Refresh";}
+      note.textContent="Live summary could not refresh. Tap Refresh to try again.";
     }
   };
   document.querySelector("#live-metrics-refresh").onclick=paintLiveMetrics;
   paintLiveMetrics();
   refreshAdminBadges();
 }
-
-
 function renderSystemSafety(){
   const i=state.instituteSession;if(!i){state.screen="institute";return render();}
   app.innerHTML=shell(`<section class="card dashboard-card wide-card"><button id="system-safety-back" class="back">← Admin Home</button><div class="card-heading"><span class="step">Maintenance</span><h2>System & Safety</h2><p>Audit history, deleted records, backups and system checks in one place.</p></div><div class="admin-home-grid neat-admin-grid">
@@ -1005,14 +1003,13 @@ function renderNewAdmission(message="") {
   ${field("a-joining","Joining Date","date","",today)}
   <label class="field form-wide"><span>Permanent Address</span><textarea id="a-address"></textarea></label>
 
-  <div class="form-wide bed-booking-box admission-primary-step">
+  <div class="form-wide bed-booking-box admission-primary-step compact-bed-selection">
     <span class="step">Step 1</span><h3>Bed Selection</h3>
-    <p class="form-help">Select the room first. The configured sharing fee will be applied automatically.</p>
     <button id="select-admission-bed" type="button" class="secondary">Select Floor, Room & Bed</button>
-    <p id="selected-admission-bed" class="selected-bed">No bed selected</p>
-    <div id="selected-room-fee-summary" class="room-fee-summary">
-      <strong>Select a room and bed</strong>
-      <span>Room sharing fee will appear here automatically.</span>
+    <p id="selected-admission-bed" class="selected-bed visually-hidden">No bed selected</p>
+    <div id="selected-room-fee-summary" class="room-fee-summary compact-room-summary">
+      <strong>No bed selected</strong>
+      <span>Select a bed to view room, sharing and fee details.</span>
     </div>
   </div>
 
@@ -1054,14 +1051,13 @@ function renderManualAdmission(){
   ${field("m-joining","Joining Date","date","",today)}
   <label class="field form-wide"><span>Permanent Address</span><textarea id="m-address"></textarea></label>
 
-  <div class="form-wide bed-booking-box admission-primary-step">
+  <div class="form-wide bed-booking-box admission-primary-step compact-bed-selection">
     <span class="step">Step 1</span><h3>Bed Selection</h3>
-    <p class="form-help">Select the room first. The configured sharing fee will be applied automatically.</p>
     <button id="select-manual-bed" type="button" class="secondary">Select Floor, Room & Bed</button>
-    <p id="selected-admission-bed" class="selected-bed">No bed selected</p>
-    <div id="selected-room-fee-summary" class="room-fee-summary">
-      <strong>Select a room and bed</strong>
-      <span>Room sharing fee will appear here automatically.</span>
+    <p id="selected-admission-bed" class="selected-bed visually-hidden">No bed selected</p>
+    <div id="selected-room-fee-summary" class="room-fee-summary compact-room-summary">
+      <strong>No bed selected</strong>
+      <span>Select a bed to view room, sharing and fee details.</span>
     </div>
   </div>
 
@@ -1866,7 +1862,7 @@ function simplifyResidentHome(){
   });
 }
 
-function render(){ensureBackGuard();saveUiScreen();if(state.screen==="system-health")return renderSystemHealth();if(state.screen==="approvals")return renderApprovals();if(state.screen==="admin-notifications")return renderAdminNotifications();if(state.screen==="student-notifications")return renderStudentNotifications();if(state.screen==="audit-logs")return renderAuditLogs();if(state.screen==="recycle-bin")return renderRecycleBin();if(state.screen==="backup-restore")return renderBackupRestore();if(state.screen==="super-admin")return renderSuperAdmin();if(state.screen==="institute-password-change")return renderInstitutePasswordChange();if(state.screen==="dashboard")return renderAdminDashboard();if(state.screen==="create")return renderCreate();if(state.screen==="manage")return renderManage();if(state.screen==="institute-portal")return renderInstitutePortal();if(state.screen==="admin-home")return renderInstituteAdminHome();if(state.screen==="settings")return renderSettingsHome();if(state.screen==="institute-admin-login")return renderInstituteAdminLogin();if(state.screen==="admin-login-settings")return renderAdminLoginSettings();if(state.screen==="dashboard-settings")return renderDashboardSettings();if(state.screen==="admission-fee-settings")return renderAdmissionFeeSettings();if(state.screen==="new-admission")return renderNewAdmission();if(state.screen==="manual-admission")return renderManualAdmission();if(state.screen==="admission-success")return renderAdmissionSuccess();if(state.screen==="admission-pending")return renderAdmissionPending();if(state.screen==="student-login")return renderStudentLogin();if(state.screen==="student-password-change")return renderStudentPasswordChange();if(state.screen==="student-dashboard")return renderStudentDashboard();if(state.screen==="student-profile")return renderStudentProfile();if(state.screen==="student-fees")return renderStudentFees();if(state.screen==="student-attendance")return renderStudentAttendance();if(state.screen==="student-entry-exit")return renderStudentEntryExit();if(state.screen==="student-complaints")return renderStudentComplaints();if(state.screen==="student-menu")return renderStudentMenu();if(state.screen==="institute-admin")return renderInstituteAdmin();if(state.screen==="student-manage")return renderStudentManage();if(state.screen==="room-management")return renderRoomManagement();if(state.screen==="room-manage")return renderRoomManage();if(state.screen==="fees-management")return renderFeesManagement();if(state.screen==="pending-admissions")return renderPendingAdmissions();if(state.screen==="admissions-home")return renderAdmissionsHome();if(state.screen==="kitchen")return renderKitchen();if(state.screen==="entry-exit")return renderEntryExit();if(state.screen==="complaints-admin")return renderComplaintsAdmin();if(state.screen==="pdf-reports")return renderPdfReports();return renderInstituteLogin();}
+function render(){ensureBackGuard();saveUiScreen();if(state.screen==="system-safety")return renderSystemSafety();if(state.screen==="system-health")return renderSystemHealth();if(state.screen==="approvals")return renderApprovals();if(state.screen==="admin-notifications")return renderAdminNotifications();if(state.screen==="student-notifications")return renderStudentNotifications();if(state.screen==="audit-logs")return renderAuditLogs();if(state.screen==="recycle-bin")return renderRecycleBin();if(state.screen==="backup-restore")return renderBackupRestore();if(state.screen==="super-admin")return renderSuperAdmin();if(state.screen==="institute-password-change")return renderInstitutePasswordChange();if(state.screen==="dashboard")return renderAdminDashboard();if(state.screen==="create")return renderCreate();if(state.screen==="manage")return renderManage();if(state.screen==="institute-portal")return renderInstitutePortal();if(state.screen==="admin-home")return renderInstituteAdminHome();if(state.screen==="settings")return renderSettingsHome();if(state.screen==="institute-admin-login")return renderInstituteAdminLogin();if(state.screen==="admin-login-settings")return renderAdminLoginSettings();if(state.screen==="dashboard-settings")return renderDashboardSettings();if(state.screen==="admission-fee-settings")return renderAdmissionFeeSettings();if(state.screen==="new-admission")return renderNewAdmission();if(state.screen==="manual-admission")return renderManualAdmission();if(state.screen==="admission-success")return renderAdmissionSuccess();if(state.screen==="admission-pending")return renderAdmissionPending();if(state.screen==="student-login")return renderStudentLogin();if(state.screen==="student-password-change")return renderStudentPasswordChange();if(state.screen==="student-dashboard")return renderStudentDashboard();if(state.screen==="student-profile")return renderStudentProfile();if(state.screen==="student-fees")return renderStudentFees();if(state.screen==="student-attendance")return renderStudentAttendance();if(state.screen==="student-entry-exit")return renderStudentEntryExit();if(state.screen==="student-complaints")return renderStudentComplaints();if(state.screen==="student-menu")return renderStudentMenu();if(state.screen==="institute-admin")return renderInstituteAdmin();if(state.screen==="student-manage")return renderStudentManage();if(state.screen==="room-management")return renderRoomManagement();if(state.screen==="room-manage")return renderRoomManage();if(state.screen==="fees-management")return renderFeesManagement();if(state.screen==="pending-admissions")return renderPendingAdmissions();if(state.screen==="admissions-home")return renderAdmissionsHome();if(state.screen==="kitchen")return renderKitchen();if(state.screen==="entry-exit")return renderEntryExit();if(state.screen==="complaints-admin")return renderComplaintsAdmin();if(state.screen==="pdf-reports")return renderPdfReports();return renderInstituteLogin();}
 
 watchAuth(async user=>{state.authUser=user;if(!user){if(["dashboard","create","manage"].includes(state.screen))state.screen="super-admin";render();return;}if(user.email?.toLowerCase()!==SUPER_ADMIN_EMAIL){await logoutCurrentUser();return renderSuperAdmin("This email is not authorized as HMOS Super Admin.");}state.institutes=readCache();state.screen="dashboard";render();try{state.institutes=await listInstitutes();writeCache(state.institutes);if(state.screen==="dashboard")renderAdminDashboard();}catch(err){console.error(err);}});
 try{state.adminAuthenticated=Boolean(sessionStorage.getItem(ADMIN_SESSION_KEY));}catch{}

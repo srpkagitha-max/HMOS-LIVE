@@ -1,0 +1,19 @@
+HMOS V4.5.34
+
+Admin Home:
+- Replaced the old 15-card layout directly in renderInstituteAdminHome.
+- Final main features: Residents, Admissions, Rooms & Beds, Fees, Kitchen,
+  Entry / Exit, Complaints, Reports, System & Safety, Settings.
+- Notifications moved to a bell button in the Admin Home header.
+- Audit Logs, Recycle Bin, Backup & Restore and System Health moved under System & Safety.
+- Approvals is no longer a separate Admin Home card.
+- Today at a Glance is now summary-only instead of duplicate navigation.
+
+Admission:
+- Bed Selection made compact.
+- Removed explanatory paragraph and duplicate selected-bed text.
+- Keeps one Select Floor, Room & Bed button.
+- Keeps one small summary box below it with Room / Sharing / Bed / Occupancy / Fee.
+- Same compact layout applied to online and manual admission.
+
+No Firestore rules change required.
