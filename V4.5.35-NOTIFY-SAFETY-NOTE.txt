@@ -1,0 +1,11 @@
+HMOS V4.5.35
+
+Fixes:
+1. Added a Notifications bell with unread count to Resident Home.
+2. Bell opens the resident Notifications screen.
+3. Resident Notifications back label now says Resident Home.
+4. System & Safety cards now use the same admin-home-action component as the rest of Admin Home.
+5. System & Safety cards are uniform in size, spacing, typography and two-column mobile layout.
+6. Optional Resident Change Password back navigation returns to Resident Home.
+
+No Firestore rules change required.

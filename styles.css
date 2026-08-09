@@ -756,3 +756,58 @@ input[readonly]{
   .compact-bed-selection{padding:20px 24px!important}
   .compact-bed-selection .secondary{width:100%;min-width:0}
 }
+
+
+/* HMOS V4.5.35 — resident notification bell + uniform System & Safety */
+.system-safety-grid .admin-home-action{
+  min-height:122px;
+  text-align:left;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:flex-start;
+}
+.system-safety-grid .admin-home-action strong{
+  font-size:18px;
+  line-height:1.15;
+}
+.system-safety-grid .admin-home-action small{
+  margin-top:6px;
+  color:#6f7f8d;
+  font-size:13px;
+  line-height:1.35;
+}
+
+.resident-home-head{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  gap:14px;
+  align-items:center;
+}
+.resident-home-title{min-width:0}
+.resident-home-actions{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  flex-wrap:nowrap;
+}
+.resident-home-actions .header-notification-button{
+  min-width:58px;
+  min-height:50px;
+}
+.live-badge.has-count{
+  background:#c5281c;
+  color:#fff;
+}
+@media(max-width:700px){
+  .resident-home-head{
+    grid-template-columns:auto minmax(0,1fr);
+  }
+  .resident-home-actions{
+    grid-column:1/-1;
+    justify-content:flex-end;
+  }
+  .system-safety-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}

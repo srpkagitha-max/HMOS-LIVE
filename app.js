@@ -9,11 +9,11 @@ import {
   submitStudentFeePaymentRequest, getInstituteBranding, saveInstituteBranding, saveAdmissionFeeSettings,
   createApprovalRequest, listApprovalRequests, decideApprovalRequest, createNotification, listNotifications, markNotificationRead, createAuditLog, listAuditLogs, softDeleteRecord, listRecycleBin, restoreDeletedRecord, createBackupSnapshot, listBackupSnapshots, exportInstituteBackup, restoreInstituteBackup, findDuplicateAdmissions,
   loginInstituteAdmin, changeInstituteAdminCredentials, checkAdmissionStatus, getSystemHealth, getInstituteLiveMetrics, reconcileResidentBedAssignments
-} from "./firebase-service.js?v=4.5.34";
+} from "./firebase-service.js?v=4.5.35";
 
 const app = document.querySelector("#app");
 app.addEventListener("click",e=>{const b=e.target.closest("[data-toggle-password]");if(!b)return;const input=document.getElementById(b.dataset.togglePassword);if(!input)return;const show=input.type==="password";input.type=show?"text":"password";b.textContent=show?"Hide":"Show";b.setAttribute("aria-label",show?"Hide password":"Show password");});
-const HMOS_VERSION = "4.5.34";
+const HMOS_VERSION = "4.5.35";
 window.__HMOS_VERSION__ = HMOS_VERSION;
 
 const activeOperations = new Set();
@@ -95,7 +95,7 @@ const SCREEN_PARENTS = {
   "admin-login-settings":"settings","manual-admission":"admissions-home",
   "student-profile":"student-dashboard","student-fees":"student-dashboard","student-attendance":"student-dashboard",
   "student-entry-exit":"student-dashboard","student-complaints":"student-dashboard","student-menu":"student-dashboard",
-  "student-notifications":"student-dashboard","student-login":"institute-portal","student-password-change":"student-login","institute-admin-login":"institute-portal","institute-password-change":"institute-portal"
+  "student-notifications":"student-dashboard","student-login":"institute-portal","student-password-change":"student-dashboard","institute-admin-login":"institute-portal","institute-password-change":"institute-portal"
 };
 function saveUiScreen(){
   try{
@@ -377,16 +377,15 @@ function renderInstituteAdminHome(){
 }
 function renderSystemSafety(){
   const i=state.instituteSession;if(!i){state.screen="institute";return render();}
-  app.innerHTML=shell(`<section class="card dashboard-card wide-card"><button id="system-safety-back" class="back">← Admin Home</button><div class="card-heading"><span class="step">Maintenance</span><h2>System & Safety</h2><p>Audit history, deleted records, backups and system checks in one place.</p></div><div class="admin-home-grid neat-admin-grid">
-    <button class="admin-home-tile" data-system-target="audit-logs"><span class="admin-home-icon">🧾</span><strong>Audit History</strong><small>Review important admin activity.</small></button>
-    <button class="admin-home-tile" data-system-target="recycle-bin"><span class="admin-home-icon">♻️</span><strong>Recycle Bin</strong><small>Review and restore deleted records.</small></button>
-    <button class="admin-home-tile" data-system-target="backup-restore"><span class="admin-home-icon">💾</span><strong>Backup & Restore</strong><small>Create and manage recovery copies.</small></button>
-    <button class="admin-home-tile" data-system-target="system-health"><span class="admin-home-icon">🛡️</span><strong>System Health</strong><small>Check app and data-service status.</small></button>
+  app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page"><button id="system-safety-back" class="back">← Admin Home</button><div class="compact-heading"><span class="step">Maintenance</span><h2>System & Safety</h2><p>Audit history, deleted records, backups and system checks in one place.</p></div><div class="admin-home-grid neat-admin-grid simple-feature-grid system-safety-grid">
+    <button class="admin-home-action" data-system-target="audit-logs"><strong>Audit History</strong><small>Important admin activity</small></button>
+    <button class="admin-home-action" data-system-target="recycle-bin"><strong>Recycle Bin</strong><small>Restore deleted records</small></button>
+    <button class="admin-home-action" data-system-target="backup-restore"><strong>Backup & Restore</strong><small>Backup and recovery</small></button>
+    <button class="admin-home-action" data-system-target="system-health"><strong>System Health</strong><small>Network, Firebase & backup status</small></button>
   </div></section>`,true);
   document.querySelector("#system-safety-back").onclick=()=>{state.screen="admin-home";render();};
   document.querySelectorAll("[data-system-target]").forEach(b=>b.onclick=()=>{state.screen=b.dataset.systemTarget;render();});
 }
-
 function renderSettingsHome(){
   const i=state.instituteSession;if(!i){state.screen="institute";return render();}
   app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page"><button id="settings-back" class="back">← Institute Home</button><div class="compact-heading"><span class="step">Institute configuration</span><h2>Settings</h2><p>Manage dashboard identity and admission payment settings.</p></div><div class="admin-home-grid compact-dashboard"><button id="open-dashboard-settings" class="admin-home-action"><strong>Dashboard Settings</strong><small>Name, logo, colours and welcome message</small></button><button id="open-fee-settings" class="admin-home-action"><strong>Admission Fees Settings</strong><small>Total fee and UPI payment ID</small></button><button id="open-admin-login-settings" class="admin-home-action admin-home-wide"><strong>Change Admin Password</strong><small>Update Admin ID or password</small></button></div></section>`,true);
@@ -1377,7 +1376,56 @@ function renderStudentLogin(message=""){
 function renderStudentPasswordChange(){const s=state.studentSession;if(!s){state.screen="student-login";return render();}app.innerHTML=shell(`<section class="card login-card"><button id="student-password-back" class="back" type="button">← Resident Home</button><span class="step">Resident security</span><h2>Change Password</h2><p>Change it whenever you want. Your current password continues to work until you save a new one.</p><form id="student-password-form">${field("student-current-password","Current Password","password","Enter current password","","autocomplete='current-password'")}${field("student-new-password","New Password","password","Minimum 10 characters","","autocomplete='new-password'")}${field("student-confirm-password","Confirm New Password","password","Re-enter new password","","autocomplete='new-password'")}<p id="student-password-message" class="form-message"></p><button id="student-password-submit" class="primary" type="submit">Save New Password <span>→</span></button></form></section>`,true);document.querySelector("#student-password-back").onclick=()=>{state.screen="student-dashboard";render();};document.querySelector("#student-password-form").onsubmit=async e=>{e.preventDefault();const current=document.querySelector("#student-current-password").value,n=document.querySelector("#student-new-password").value,c=document.querySelector("#student-confirm-password").value,m=document.querySelector("#student-password-message"),b=document.querySelector("#student-password-submit");if(n!==c){m.textContent="Passwords do not match.";m.className="form-message show error";return;}b.disabled=true;b.textContent="Saving…";try{await changeStudentPassword(s.studentId,current,n);state.studentCurrentPassword=n;state.studentSession={...s,mustChangePassword:false};saveStudentSession(state.studentSession);m.textContent="Password changed successfully.";m.className="form-message show success-message";e.target.reset();}catch(err){const messages={"weak-student-password":"Use 10+ characters with uppercase, lowercase, number and special character.","permission-denied":"Password change is blocked by Firestore Rules.","invalid-student-credential":"Current password is incorrect.","student-password-timeout":"Network is slow. Try again."};m.textContent=messages[err.code]||`Could not change password. ${err.code||""}`;m.className="form-message show error";}finally{b.disabled=false;b.innerHTML="Save New Password <span>→</span>";}};}
 
 function studentPortalCard(id,icon,title,sub){return `<button id="${id}" class="student-home-card"><div><strong>${title}</strong><small>${sub}</small></div><b>›</b></button>`;}
-function renderStudentDashboard(){const s=state.studentSession;if(!s){state.screen="student-login";return render();}app.innerHTML=shell(`<section class="card portal-card wide-card compact-page"><div class="compact-profile-head"><div class="portal-logo">${esc((s.studentName||"S")[0].toUpperCase())}</div><div><span class="step success-step">Resident Home</span><h2>${esc(s.studentName||"Student")}</h2><p>${esc(s.studentId)} · ${esc(s.courseOrClass||"")}</p></div><button id="student-logout" class="secondary compact-button">Logout</button></div><div class="student-home-grid">${studentPortalCard("student-profile-card","","Profile","Admission details & PDF")}${studentPortalCard("student-fees-card","","Fees","Payments, balance & due date")}${studentPortalCard("student-attendance-card","","Attendance","Breakfast, lunch & dinner")}${studentPortalCard("student-entry-card","","Entry / Exit","Submit movement details")}${studentPortalCard("student-complaints-card","","Complaints","Send and track complaints")}${studentPortalCard("student-menu-card","","Today Menu","Breakfast, lunch & dinner")}${studentPortalCard("student-change-password-card","","Change Password","Optional account security")}</div></section>`,true);document.querySelector("#student-logout").onclick=()=>{clearUiScreen();clearStudentSession();state.screen="institute-portal";render();};document.querySelector("#student-profile-card").onclick=()=>{state.screen="student-profile";render();};document.querySelector("#student-fees-card").onclick=()=>{state.screen="student-fees";render();};document.querySelector("#student-attendance-card").onclick=()=>{state.screen="student-attendance";render();};document.querySelector("#student-entry-card").onclick=()=>{state.screen="student-entry-exit";render();};document.querySelector("#student-complaints-card").onclick=()=>{state.screen="student-complaints";render();};document.querySelector("#student-menu-card").onclick=()=>{state.screen="student-menu";render();};document.querySelector("#student-change-password-card").onclick=()=>{state.screen="student-password-change";render();};}
+function renderStudentDashboard(){
+  const s=state.studentSession;if(!s){state.screen="student-login";return render();}
+  app.innerHTML=shell(`<section class="card portal-card wide-card compact-page">
+    <div class="compact-profile-head resident-home-head">
+      <div class="portal-logo">${esc((s.studentName||"S")[0].toUpperCase())}</div>
+      <div class="resident-home-title"><span class="step success-step">Resident Home</span><h2>${esc(s.studentName||"Student")}</h2><p>${esc(s.studentId)} · ${esc(s.courseOrClass||"")}</p></div>
+      <div class="resident-home-actions">
+        <button id="student-notification-bell" class="header-notification-button" type="button" aria-label="Notifications">🔔 <span id="student-notification-badge" class="live-badge">0</span></button>
+        <button id="student-logout" class="secondary compact-button">Logout</button>
+      </div>
+    </div>
+    <div class="student-home-grid">
+      ${studentPortalCard("student-profile-card","","Profile","Admission details & PDF")}
+      ${studentPortalCard("student-fees-card","","Fees","Payments, balance & due date")}
+      ${studentPortalCard("student-attendance-card","","Attendance","Breakfast, lunch & dinner")}
+      ${studentPortalCard("student-entry-card","","Entry / Exit","Submit movement details")}
+      ${studentPortalCard("student-complaints-card","","Complaints","Send and track complaints")}
+      ${studentPortalCard("student-menu-card","","Today Menu","Breakfast, lunch & dinner")}
+      ${studentPortalCard("student-change-password-card","","Change Password","Optional account security")}
+    </div>
+  </section>`,true);
+
+  document.querySelector("#student-logout").onclick=()=>{clearUiScreen();clearStudentSession();state.screen="institute-portal";render();};
+  document.querySelector("#student-notification-bell").onclick=()=>{state.screen="student-notifications";render();};
+  document.querySelector("#student-profile-card").onclick=()=>{state.screen="student-profile";render();};
+  document.querySelector("#student-fees-card").onclick=()=>{state.screen="student-fees";render();};
+  document.querySelector("#student-attendance-card").onclick=()=>{state.screen="student-attendance";render();};
+  document.querySelector("#student-entry-card").onclick=()=>{state.screen="student-entry-exit";render();};
+  document.querySelector("#student-complaints-card").onclick=()=>{state.screen="student-complaints";render();};
+  document.querySelector("#student-menu-card").onclick=()=>{state.screen="student-menu";render();};
+  document.querySelector("#student-change-password-card").onclick=()=>{state.screen="student-password-change";render();};
+
+  (async()=>{
+    const badge=document.querySelector("#student-notification-badge");
+    if(!badge)return;
+    try{
+      const notes=await Promise.race([
+        listNotifications({instituteCode:s.instituteCode,recipientType:"resident",recipientId:s.studentId}),
+        new Promise((_,reject)=>setTimeout(()=>reject(new Error("timeout")),8000))
+      ]);
+      if(!document.body.contains(badge))return;
+      const unread=(notes||[]).filter(n=>!n.isRead).length;
+      badge.textContent=String(unread);
+      badge.classList.toggle("has-count",unread>0);
+    }catch(err){
+      console.warn("Resident notification badge load failed",err);
+      if(document.body.contains(badge))badge.textContent="0";
+    }
+  })();
+}
 function studentBack(title="Student Home"){return `<button id="student-page-back" class="back">← ${title}</button>`;}
 function bindStudentBack(){document.querySelector("#student-page-back").onclick=()=>{state.screen="student-dashboard";render();};}
 function renderStudentProfile(){const s=state.studentSession;if(!s)return renderStudentLogin();const rows=[["Student ID",s.studentId],["Full Name",s.studentName],["Date of Birth",s.dateOfBirth],["Gender",s.gender],["Course / Class",s.courseOrClass],["Phone",s.studentPhone],["Parent / Guardian",s.parentName],["Parent Phone",s.parentPhone],["Address",s.address],["Joining Date",s.joiningDate],["Room",s.roomNumber?`Room ${s.roomNumber}`:"Not allotted"],["Bed",s.bedNumber?`Bed ${s.bedNumber}`:"No bed"]];app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page">${studentBack()}<div class="compact-heading"><h2>Profile</h2><p>Complete admission information.</p></div><div class="profile-detail-list">${rows.map(r=>`<article><span>${r[0]}</span><strong>${esc(r[1]||"—")}</strong></article>`).join("")}</div><button id="profile-pdf" class="primary">Print / Save Admission PDF</button></section>`,true);bindStudentBack();document.querySelector("#profile-pdf").onclick=()=>{const content=`<div class="grid">${rows.map(r=>`<div class="field"><span>${esc(r[0])}</span><strong>${esc(r[1]||"—")}</strong></div>`).join("")}</div>`;openPremiumDocumentWindow({title:"Admission Profile",eyebrow:"STUDENT RECORD",subtitle:"Resident admission and profile information",content,result:s,autoPrint:true});};}
@@ -1732,7 +1780,7 @@ async function renderAdminNotifications(){
 }
 async function renderStudentNotifications(){
   const s=state.studentSession;if(!s)return;
-  app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page"><button id="student-notes-back" class="back">← Student Home</button><div class="compact-heading"><span class="step">Resident alerts</span><h2>Notifications</h2><p>Fee, payment, exit, complaint, menu and attendance updates.</p></div><div id="student-notes-list"><div class="loading-card"><div class="loader"></div><p>Loading notifications…</p></div></div></section>`,true);
+  app.innerHTML=shell(`<section class="card dashboard-card wide-card compact-page"><button id="student-notes-back" class="back">← Resident Home</button><div class="compact-heading"><span class="step">Resident alerts</span><h2>Notifications</h2><p>Fee, payment, exit, complaint, menu and attendance updates.</p></div><div id="student-notes-list"><div class="loading-card"><div class="loader"></div><p>Loading notifications…</p></div></div></section>`,true);
   document.querySelector('#student-notes-back').onclick=()=>{state.screen='student-dashboard';render();};
   const list=document.querySelector('#student-notes-list');
   try{
