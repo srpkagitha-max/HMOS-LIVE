@@ -1,0 +1,24 @@
+HMOS V4.5.36 — 5-Step Admission Form
+
+Online Admission is now presented as a guided 5-step flow:
+
+Step 1 — Basic Details
+Student, course, phone, parent/guardian, joining date and address.
+
+Step 2 — Bed Selection
+One Select Floor, Room & Bed button plus one compact summary box.
+
+Step 3 — Fees
+Auto-filled Total Fees, Amount Paying Now and auto Balance.
+
+Step 4 — Payment
+Existing UPI/QR/Transaction ID payment flow, grouped under one clear step.
+
+Step 5 — Check Admission Approval
+Kept below the Submit for Admin Approval button.
+Only:
+- Check Admission Approval
+- Phone search box
+- Check Status button
+
+No Firestore rules change required.

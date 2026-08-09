@@ -9,11 +9,11 @@ import {
   submitStudentFeePaymentRequest, getInstituteBranding, saveInstituteBranding, saveAdmissionFeeSettings,
   createApprovalRequest, listApprovalRequests, decideApprovalRequest, createNotification, listNotifications, markNotificationRead, createAuditLog, listAuditLogs, softDeleteRecord, listRecycleBin, restoreDeletedRecord, createBackupSnapshot, listBackupSnapshots, exportInstituteBackup, restoreInstituteBackup, findDuplicateAdmissions,
   loginInstituteAdmin, changeInstituteAdminCredentials, checkAdmissionStatus, getSystemHealth, getInstituteLiveMetrics, reconcileResidentBedAssignments
-} from "./firebase-service.js?v=4.5.35";
+} from "./firebase-service.js?v=4.5.36";
 
 const app = document.querySelector("#app");
 app.addEventListener("click",e=>{const b=e.target.closest("[data-toggle-password]");if(!b)return;const input=document.getElementById(b.dataset.togglePassword);if(!input)return;const show=input.type==="password";input.type=show?"text":"password";b.textContent=show?"Hide":"Show";b.setAttribute("aria-label",show?"Hide password":"Show password");});
-const HMOS_VERSION = "4.5.35";
+const HMOS_VERSION = "4.5.36";
 window.__HMOS_VERSION__ = HMOS_VERSION;
 
 const activeOperations = new Set();
@@ -214,8 +214,8 @@ function renderInstitutePortal(){
 }
 
 
-function admissionStatusSection(){
-  return `<section class="admission-status-check form-wide compact-status-check"><div><h3>Check Admission Approval</h3></div><form id="admission-status-form"><input id="admission-status-phone" type="tel" inputmode="numeric" maxlength="10" placeholder="Search by 10-digit phone number" required/><button class="primary" type="submit">Check Status</button></form><div id="admission-status-result"></div></section>`;
+function admissionStatusSection(stepLabel=""){
+  return `<section class="admission-status-check form-wide compact-status-check admission-step-section">${stepLabel?`<span class="step">${esc(stepLabel)}</span>`:""}<div><h3>Check Admission Approval</h3></div><form id="admission-status-form"><input id="admission-status-phone" type="tel" inputmode="numeric" maxlength="10" placeholder="Search by 10-digit phone number" required/><button class="primary" type="submit">Check Status</button></form><div id="admission-status-result"></div></section>`;
 }
 function bindAdmissionStatusForm(){
   const form=document.querySelector("#admission-status-form");
@@ -987,43 +987,63 @@ function renderPdfReports(){
 
 function renderNewAdmission(message="") {
   const i=state.instituteSession;if(!i){state.screen="institute";return render();}
-  const today=new Date().toISOString().slice(0,10), studentId=generateStudentId(i.instituteCode), payment=paymentDetails();
+  const today=new Date().toISOString().slice(0,10), studentId=generateStudentId(i.instituteCode);
   state.selectedAdmissionBed=null;
-  app.innerHTML=shell(`<section class="card admission-card wide-card"><button id="back-portal" class="back">← Institute Portal</button><div class="card-heading"><span class="step success-step">Student onboarding</span><h2>New Admission</h2><p>Payment verification and bed booking for <strong>${esc(i.instituteName)}</strong>.</p></div><form id="admission-form" class="form-grid" novalidate>
-  ${field("a-student-id","Student ID","text","Auto generated",studentId,"readonly")}
-  ${field("a-student-name","Student Full Name","text","Enter student name")}
-  ${field("a-dob","Date of Birth","date","","","max='${today}'")}
-  <label class="field"><span>Gender</span><select id="a-gender"><option value="">Select gender</option><option>Male</option><option>Female</option><option>Other</option></select></label>
-  ${field("a-course","Course / Class","text","Example: B.Tech 1st Year")}
-  ${field("a-student-phone","Student Phone","tel","Required 10-digit number","","required inputmode='numeric'")}
-  ${field("a-parent-name","Parent / Guardian Name","text","Enter parent name")}
-  <label class="field"><span>Relation</span><select id="a-parent-relation"><option>Father</option><option>Mother</option><option>Guardian</option></select></label>
-  ${field("a-parent-phone","Parent Phone","tel","Required 10-digit number")}
-  ${field("a-joining","Joining Date","date","",today)}
-  <label class="field form-wide"><span>Permanent Address</span><textarea id="a-address"></textarea></label>
+  app.innerHTML=shell(`<section class="card admission-card wide-card">
+    <button id="back-portal" class="back">← Institute Portal</button>
+    <div class="card-heading"><span class="step success-step">Student onboarding</span><h2>New Admission</h2><p>Complete the 5 simple steps below.</p></div>
 
-  <div class="form-wide bed-booking-box admission-primary-step compact-bed-selection">
-    <span class="step">Step 1</span><h3>Bed Selection</h3>
-    <button id="select-admission-bed" type="button" class="secondary">Select Floor, Room & Bed</button>
-    <p id="selected-admission-bed" class="selected-bed visually-hidden">No bed selected</p>
-    <div id="selected-room-fee-summary" class="room-fee-summary compact-room-summary">
-      <strong>No bed selected</strong>
-      <span>Select a bed to view room, sharing and fee details.</span>
-    </div>
-  </div>
+    <form id="admission-form" class="form-grid" novalidate>
+      <div class="form-wide admission-step-section basic-details-step">
+        <span class="step">Step 1</span>
+        <h3>Basic Details</h3>
+        <div class="form-grid">
+          ${field("a-student-id","Student ID","text","Auto generated",studentId,"readonly")}
+          ${field("a-student-name","Student Full Name","text","Enter student name")}
+          ${field("a-dob","Date of Birth","date","","","max='${today}'")}
+          <label class="field"><span>Gender</span><select id="a-gender"><option value="">Select gender</option><option>Male</option><option>Female</option><option>Other</option></select></label>
+          ${field("a-course","Course / Class","text","Example: B.Tech 1st Year")}
+          ${field("a-student-phone","Student Phone","tel","Required 10-digit number","","required inputmode='numeric'")}
+          ${field("a-parent-name","Parent / Guardian Name","text","Enter parent name")}
+          <label class="field"><span>Relation</span><select id="a-parent-relation"><option>Father</option><option>Mother</option><option>Guardian</option></select></label>
+          ${field("a-parent-phone","Parent Phone","tel","Required 10-digit number")}
+          ${field("a-joining","Joining Date","date","",today)}
+          <label class="field form-wide"><span>Permanent Address</span><textarea id="a-address"></textarea></label>
+        </div>
+      </div>
 
-  <div class="form-wide fee-box">
-    <span class="step">Step 2</span><h3>Fee Details</h3>
-    ${field("a-total-fees","Total Fees","number","0",0,"readonly")}
-    <small id="selected-fee-source" class="fee-source-note">Select a room/bed to apply the sharing fee.</small>
-    ${field("a-paying-now","Amount Paying Now","number","Enter amount","","min='1'")}
-    ${field("a-balance","Balance Amount","number","0",0,"readonly")}
-  </div>
+      <div class="form-wide bed-booking-box admission-primary-step compact-bed-selection admission-step-section">
+        <span class="step">Step 2</span>
+        <h3>Bed Selection</h3>
+        <button id="select-admission-bed" type="button" class="secondary">Select Floor, Room & Bed</button>
+        <p id="selected-admission-bed" class="selected-bed visually-hidden">No bed selected</p>
+        <div id="selected-room-fee-summary" class="room-fee-summary compact-room-summary">
+          <strong>No bed selected</strong>
+          <span>Select a bed to view room, sharing and fee details.</span>
+        </div>
+      </div>
 
-  ${paymentBoxHtml(0,true)}
-  <p id="admission-message" class="form-message form-wide ${message?"show error":""}">${esc(message)}</p>
-  <button id="admission-submit" class="primary form-wide">Submit for Admin Approval <span>→</span></button>
-  </form>${admissionStatusSection()}</section>`,true);
+      <div class="form-wide fee-box admission-step-section">
+        <span class="step">Step 3</span>
+        <h3>Fees</h3>
+        ${field("a-total-fees","Total Fees","number","0",0,"readonly")}
+        <small id="selected-fee-source" class="fee-source-note">Select a room/bed to apply the sharing fee.</small>
+        ${field("a-paying-now","Amount Paying Now","number","Enter amount","","min='1'")}
+        ${field("a-balance","Balance Amount","number","0",0,"readonly")}
+      </div>
+
+      <div class="form-wide admission-step-section payment-step-wrapper">
+        <span class="step">Step 4</span>
+        <h3>Payment</h3>
+        ${paymentBoxHtml(0,true)}
+      </div>
+
+      <p id="admission-message" class="form-message form-wide ${message?"show error":""}">${esc(message)}</p>
+      <button id="admission-submit" class="primary form-wide">Submit for Admin Approval <span>→</span></button>
+    </form>
+
+    ${admissionStatusSection("Step 5")}
+  </section>`,true);
 
   document.querySelector("#back-portal").onclick=()=>{state.selectedAdmissionBed=null;state.screen="institute-portal";render();};
   const paying=document.querySelector("#a-paying-now");

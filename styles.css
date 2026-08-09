@@ -811,3 +811,44 @@ input[readonly]{
     grid-template-columns:repeat(2,minmax(0,1fr))!important;
   }
 }
+
+
+/* HMOS V4.5.36 — 5-step admission flow */
+.admission-step-section{
+  border:1px solid #d8e4ed;
+  border-radius:22px;
+  padding:22px 24px;
+  background:#f8fbfd;
+}
+.admission-step-section>h3{
+  margin:6px 0 16px;
+  color:#102844;
+}
+.basic-details-step>.form-grid{
+  margin-top:4px;
+}
+.payment-step-wrapper>.upi-box{
+  margin:0;
+  padding:0;
+  border:0;
+  background:transparent;
+  box-shadow:none;
+}
+.payment-step-wrapper>.upi-box>h3{
+  display:none;
+}
+.compact-status-check.admission-step-section{
+  margin-top:18px;
+}
+.compact-status-check.admission-step-section>div>h3{
+  margin:6px 0 12px;
+}
+.compact-status-check form{
+  gap:10px;
+}
+@media(max-width:700px){
+  .admission-step-section{
+    padding:20px 22px;
+    border-radius:20px;
+  }
+}
